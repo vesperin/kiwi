@@ -10,7 +10,7 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
 	
 	"VesperService" should {
 	    "return a command for GET requests to the root path" in {
-	      Get("/?q=add %22wow%22") ~> vesperRoutes ~> check {
+	      Get("/?q=blue") ~> vesperRoutes ~> check {
 	        responseAs[String] must contain("The command is")
 	      }
 	    }
