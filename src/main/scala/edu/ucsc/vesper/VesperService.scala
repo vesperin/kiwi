@@ -24,9 +24,7 @@ trait VesperService extends HttpService {
         parameter('q) {q =>
             complete(s"The query is '$q'")
         }
-      }
-    } ~
-    path("") {
+      } ~
       (put | post) {
         entity(as[String]) {
           c =>

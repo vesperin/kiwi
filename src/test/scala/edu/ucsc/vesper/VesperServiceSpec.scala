@@ -8,7 +8,7 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
   def actorRefFactory = system
 
   "VesperService" should {
-    "return a command for GET requests to the root path" in {
+    "return a query for GET requests to the root path" in {
       Get("/?q=blue") ~> vesperRoutes ~> check {
         responseAs[String] must contain("The query is")
       }
@@ -20,8 +20,14 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
       }
     }
 
-    "return a MethodNotAllowed error for PUT requests to the root path" in {
+    "return a command for PUT requests to the root path" in {
       Put("/", "blue") ~> sealRoute(vesperRoutes) ~> check {
+        responseAs[String] must contain("The command is")
+      }
+    }
+
+    "return a command for PUT requests to the root path" in {
+      Post("/", "blue") ~> sealRoute(vesperRoutes) ~> check {
         responseAs[String] must contain("The command is")
       }
     }
