@@ -2,6 +2,7 @@ package edu.ucsc.vesper
 
 import spray.routing._
 import akka.actor._
+import edu.ucsc.refactor.cli.{Result, Interpreter}
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -18,6 +19,10 @@ class VesperActor extends Actor with VesperService {
 
 // this trait defines vesper behavior independently from the vesper actor	
 trait VesperService extends HttpService {
+
+  val interpreter:Interpreter = new Interpreter
+  val result:Result           = interpreter.eval("help")
+
   val vesperRoutes =
     path("") {
       get {
