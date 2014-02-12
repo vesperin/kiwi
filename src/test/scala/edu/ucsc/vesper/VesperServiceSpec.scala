@@ -21,14 +21,16 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
     }
 
     "return a command for PUT requests to the root path" in {
-      Put("/", "blue") ~> sealRoute(vesperRoutes) ~> check {
-        responseAs[String] must contain("The command is")
+      Put("/", Command("add", "class A{}")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] == Command("add", "class A{}")
       }
     }
 
     "return a command for PUT requests to the root path" in {
-      Post("/", "blue") ~> sealRoute(vesperRoutes) ~> check {
-        responseAs[String] must contain("The command is")
+      Post("/", Command("show", "origin")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] == Command("show", "origin")
       }
     }
   }
