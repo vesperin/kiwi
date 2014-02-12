@@ -21,9 +21,16 @@ trait VesperService extends HttpService {
   val vesperRoutes =
     path("") {
       get {
-        parameter('q) {
-          q =>
-            complete(s"The command is '$q'")
+        parameter('q) {q =>
+            complete(s"The query is '$q'")
+        }
+      }
+    } ~
+    path("") {
+      (put | post) {
+        entity(as[String]) {
+          c =>
+            complete(s"The command is '$c'")
         }
       }
     }
