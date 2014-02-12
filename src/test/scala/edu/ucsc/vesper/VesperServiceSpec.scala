@@ -14,6 +14,13 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
       }
     }
 
+    "return a find and replace query for GET requests to the root path" in {
+      // ?q=[test~=hello] {{r}}.{{l}}
+      Get("/?q=" + """%5Btest%7E%3Dhello%5D+%7B%7Br%7D%7D.%7B%7Bl%7D%7D""") ~> vesperRoutes ~> check {
+        responseAs[String] must contain("The query is")
+      }
+    }
+
     "leave GET requests to other paths unhandled" in {
       Get("/aha") ~> vesperRoutes ~> check {
         handled must beFalse
