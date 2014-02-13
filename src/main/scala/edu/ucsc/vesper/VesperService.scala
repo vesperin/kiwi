@@ -32,7 +32,7 @@ trait VesperService extends HttpService {
             complete(s"The query is '$q'")
         }
       } ~
-      (put | post) {
+      (put | post | parameter('method ! "c")) {
         entity(as[Command]) {
           command =>
             complete(command)

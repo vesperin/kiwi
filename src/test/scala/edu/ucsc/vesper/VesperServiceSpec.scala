@@ -2,6 +2,7 @@ package edu.ucsc.vesper
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
+import spray.http.{MediaTypes, HttpEntity}
 
 class VesperServiceSpec extends Specification with Specs2RouteTest with VesperService {
 
@@ -34,10 +35,17 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
       }
     }
 
-    "return a command for PUT requests to the root path" in {
+    "return a command for POST requests to the root path" in {
       Post("/", Command("show", "origin")) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Command] == Command("show", "origin")
+      }
+    }
+
+    "return a command in JSON form for POST request to the root path" in {
+      Post("/?c=", HttpEntity(MediaTypes.`application/json`, """{ "name": "show", "params" : "origin" }""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] === Command("show", "origin")
       }
     }
   }
