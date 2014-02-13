@@ -2,7 +2,8 @@ package edu.ucsc.vesper
 
 import spray.routing._
 import akka.actor._
-import edu.ucsc.refactor.cli.{Result, Interpreter}
+import edu.ucsc.refactor.cli.{Parser, Result, Interpreter}
+import edu.ucsc.refactor.Vesper
 
 // we don't implement our route structure directly in the service actor because
 // we want to be able to test it independently, without having to spin up an actor
@@ -21,7 +22,10 @@ class VesperActor extends Actor with VesperService {
 trait VesperService extends HttpService {
 
   val interpreter:Interpreter = new Interpreter
-  val result:Result           = interpreter.eval("help")
+  val parser:Parser           = new Parser
+  val result:Result           = interpreter.eval(parser.parse("help"))
+
+  Vesper.createRefactorer()
 
   val vesperRoutes =
     path("") {
