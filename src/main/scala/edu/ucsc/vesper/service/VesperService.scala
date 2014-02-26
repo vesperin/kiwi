@@ -3,11 +3,13 @@ package edu.ucsc.vesper.service
 import spray.routing._
 import akka.actor._
 import akka.routing.RoundRobinRouter
-import edu.ucsc.vesper.domain.Command
+import edu.ucsc.vesper.domain.{UserAuthentication, Command}
 import akka.pattern.AskSupport
 import akka.util.Timeout
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit._
+import scala.concurrent.ExecutionContext.Implicits.global
+import spray.routing.authentication.BasicAuth
 
 
 // we don't implement our route structure directly in the service actor because
@@ -20,7 +22,7 @@ class VesperActor extends Actor with VesperService {
   // this actor only runs our route, but you could add
   // other things here, like request stream processing
   // or timeout handling
-  override def receive = runRoute(vesperRoutes)
+  override def receive = runRoute(vesperRoute)
 }
 
 /**
@@ -37,7 +39,7 @@ trait AsyncSupport extends AskSupport {
  *
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait VesperService extends HttpService with AsyncSupport {
+trait VesperService extends HttpService with AsyncSupport with UserAuthentication {
 
   def backend = actorRefFactory.actorOf(
     Props[VesperinActor].withRouter(
@@ -47,21 +49,26 @@ trait VesperService extends HttpService with AsyncSupport {
     )
   )
 
-  val vesperRoutes =
-    path("") {
-      get {
-        parameter('q) {
-          q =>
-            complete(
-              s"The query is '$q'"
-            )
-        }
-      } ~
-        (put | post | parameter('method ! "c")) {
-          entity(as[Command]) {
-            command =>
-              complete(command)
+  val vesperRoute =
+    authenticate(BasicAuth(realm = "secure site", users, getUsername _)) { userName =>
+      path("") {
+        get {
+          authorize(inTheClub(userName)) {
+            parameter('q) {
+              q =>
+                complete(s"The query is '$q'")
+            }
+
           }
-        }
+        } ~
+          (put | post | parameter('method ! "c")) {
+            authorize(inTheClub(userName)) {
+              entity(as[Command]) {
+                command =>
+                  complete(command)
+              }
+            }
+          }
+      }
     }
 }  	

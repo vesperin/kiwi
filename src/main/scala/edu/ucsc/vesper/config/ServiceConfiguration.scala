@@ -36,6 +36,8 @@ trait ServiceConfiguration {
   val itr:util.Iterator[Entry[String, ConfigValue]] = users.entrySet().iterator()
 
   /** a white list holding plain-text username entries **/
+  // todo(Huascar) this whitelist can be a Map where the key is the username and the value
+  // a set of scenarios: curating session or replaying history session
   lazy val whitelist = mutable.Set.empty[String]
 
   while(itr.hasNext){
