@@ -6,6 +6,7 @@ import spray.can.Http
 import akka.util.Timeout
 import scala.concurrent.duration._
 import util.Properties
+import edu.ucsc.vesper.service.VesperActor
 
 object Boot extends App {
 
