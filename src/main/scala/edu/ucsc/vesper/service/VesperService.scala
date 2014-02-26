@@ -8,7 +8,6 @@ import akka.pattern.AskSupport
 import akka.util.Timeout
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit._
-import scala.concurrent.ExecutionContext.Implicits.global
 import spray.routing.authentication.BasicAuth
 
 
@@ -40,6 +39,9 @@ trait AsyncSupport extends AskSupport {
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 trait VesperService extends HttpService with AsyncSupport with UserAuthentication {
+
+  // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
+  implicit def executionContext = actorRefFactory.dispatcher
 
   def backend = actorRefFactory.actorOf(
     Props[VesperinActor].withRouter(
