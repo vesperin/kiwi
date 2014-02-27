@@ -55,7 +55,7 @@ trait VesperService extends HttpService with AsyncSupport with UserAuthenticatio
     authenticate(BasicAuth(realm = "secure site", users, getUsername _)) { userName =>
       path("") {
         get {
-          authorize(inTheClub(userName)) {
+          authorize(isAllowReading(userName)) {
             parameter('q) {
               q =>
                 complete(s"The query is '$q'")
@@ -64,7 +64,7 @@ trait VesperService extends HttpService with AsyncSupport with UserAuthenticatio
           }
         } ~
           (put | post | parameter('method ! "c")) {
-            authorize(inTheClub(userName)) {
+            authorize(isAllowWriting(userName)) {
               entity(as[Command]) {
                 command =>
                   complete(command)

@@ -33,16 +33,16 @@ trait ServiceConfiguration {
   lazy val dbPassword = Try(config.getString("db.password")).toOption.orNull
 
   lazy val users = config.getConfig("users")
-  val itr:util.Iterator[Entry[String, ConfigValue]] = users.entrySet().iterator()
 
-  /** a white list holding plain-text username entries **/
-  // todo(Huascar) this whitelist can be a Map where the key is the username and the value
-  // a set of scenarios: curating session or replaying history session
-  lazy val whitelist = mutable.Set.empty[String]
+  lazy val permissions = config.getConfig("permissions")
+  val itr:util.Iterator[Entry[String, ConfigValue]] = permissions.entrySet().iterator()
+
+  /** a white list holding plain-text username/permission entries **/
+  lazy val whitelist = mutable.Map.empty[String, String]
 
   while(itr.hasNext){
     val  x: Entry[String, ConfigValue] = itr.next()
-    whitelist += x.getKey
+    whitelist(x.getKey) = x.getValue.render
   }
 
 

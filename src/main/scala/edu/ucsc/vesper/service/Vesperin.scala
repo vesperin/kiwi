@@ -9,6 +9,16 @@ import scala.slick.driver.MySQLDriver.simple._
 import slick.jdbc.meta.MTable
 import edu.ucsc.vesper.domain.{SearchParameters, Curating}
 import edu.ucsc.vesper.database.Curatings
+import edu.ucsc.refactor.cli._
+import edu.ucsc.vesper.domain.Curating
+import edu.ucsc.vesper.service.Update
+import edu.ucsc.vesper.domain.SearchParameters
+import edu.ucsc.vesper.service.Get
+import edu.ucsc.vesper.service.Create
+import scala.Some
+import edu.ucsc.vesper.service.Delete
+import edu.ucsc.vesper.service.All
+import edu.ucsc.refactor.cli.results.SourceResult
 
 
 /**

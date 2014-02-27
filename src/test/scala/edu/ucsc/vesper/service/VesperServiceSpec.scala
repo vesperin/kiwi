@@ -9,13 +9,14 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
 
   def actorRefFactory = system
 
-  val drafted   = BasicHttpCredentials("drafted",   "A@nC35@R")
-  val undrafted = BasicHttpCredentials("undrafted", "YeahBaby!")
+  val validCredential         = BasicHttpCredentials("legolas", "Q@nA53@T")
+  val invalidCredential       = BasicHttpCredentials("bilbo",   "YeahBaby!")
+  val unauthorizedCredential  = BasicHttpCredentials("smaug",   "O@nC35@P")
 
 
   "VesperService" should {
     "return a query for GET requests to the root path" in {
-      Get("/?q=blue") ~> addCredentials(drafted) ~> vesperRoute ~> check {
+      Get("/?q=blue") ~> addCredentials(validCredential) ~> vesperRoute ~> check {
         responseAs[String] must contain("The query is")
       }
     }
@@ -28,7 +29,7 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
 
     "return a command for PUT requests to the root path" in {
       Put("/", Command("add", List("class A{}"))) ~>
-        addCredentials(drafted) ~>
+        addCredentials(validCredential) ~>
         sealRoute(vesperRoute) ~> check {
           responseAs[Command] == Command("add", List("class A{}"))
         }
@@ -36,7 +37,7 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
 
     "return a command for POST requests to the root path" in {
       Post("/", Command("show", List("origin"))) ~>
-        addCredentials(drafted) ~>
+        addCredentials(validCredential) ~>
         sealRoute(vesperRoute) ~> check {
           responseAs[Command] == Command("show", List("origin"))
         }
@@ -44,17 +45,27 @@ class VesperServiceSpec extends Specification with Specs2RouteTest with VesperSe
 
     "return a command in JSON form for POST requests to the root path" in {
       Post("/?c=", HttpEntity(MediaTypes.`application/json`, """{ "name": "show", "params" : ["origin"] }""" )) ~>
-        addCredentials(drafted) ~>
+        addCredentials(validCredential) ~>
         sealRoute(vesperRoute) ~> check {
           responseAs[Command] === Command("show", List("origin"))
         }
     }
 
     "come back with a 401 unauthorized request message" in {
-      Get("/?q=blue") ~> addCredentials(undrafted) ~> sealRoute(vesperRoute) ~> check {
+      Get("/?q=blue") ~> addCredentials(invalidCredential) ~> sealRoute(vesperRoute) ~> check {
         status === StatusCodes.Unauthorized
         responseAs[String] === "The supplied authentication is invalid"
       }
+    }
+
+    "come back with a 405 unauthenticated request message" in {
+      Put("/", Command("add", List("class A{}"))) ~>
+        addCredentials(unauthorizedCredential) ~>
+        sealRoute(vesperRoute) ~> check {
+          status === StatusCodes.Forbidden
+          responseAs[String] === "The supplied authentication is not authorized to access this resource"
+        }
+
     }
   }
 }
