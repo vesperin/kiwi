@@ -25,11 +25,12 @@ object LoungeObjects {
   // """{ "what": "class", "range": ["123", "132"], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }"""
   case class Remove(what: String, range: List[Int], source: Code)
 
-  case class Rename(what: String, from: String, to: String, range: List[Int])
+  case class Rename(what: String, from: String, to: String, range: List[Int], source: Code)
 
   case class Request(
         inspect: Option[Inspect]  = None,
-        remove:  Option[Remove]   = None
+        remove:  Option[Remove]   = None,
+        rename:  Option[Rename]   = None
   )
 
 
@@ -49,7 +50,11 @@ object LoungeObjects {
     implicit val deleteFormats = jsonFormat3(Remove.apply)
   }
 
+  object Rename extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val deleteFormats = jsonFormat5(Rename.apply)
+  }
+
   object Request extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat2(Request.apply)
+    implicit val requestFormats = jsonFormat3(Request.apply)
   }
 }

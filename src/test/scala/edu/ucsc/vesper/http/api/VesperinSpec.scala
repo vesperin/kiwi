@@ -52,6 +52,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
@@ -72,6 +73,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
@@ -90,6 +92,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
@@ -108,15 +111,17 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
     }
 
-    "return a remove request with authorization token for POST requests to the root path" in {
+    "return a remove request with authorization token for POST requests with authorization token to the root path" in {
       Post("/api/try?auth_token=legolas", Request(remove = Some(Remove(what = "class", range = List(1, 2), source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Request] === Request(
+          None,
           remove = Some(
             Remove(
               what   = "class",
@@ -128,13 +133,14 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
                   content     = "class Bootstrap {void inject(Object object}{}}"
               )
             )
-          )
+          ),
+          None
         )
       }
     }
 
 
-    "return a remove request in JSON form for POST requests to the root path" in {
+    "return a remove request in JSON form for POST requests containing authorization HTTP Header to the root path" in {
       Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"remove" : { "what": "class", "range": [1, 2], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
@@ -143,6 +149,58 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
           Some(
             Remove(
               "class",
+              List(1, 2),
+              Code(
+                None,
+                "Bootstrap.java",
+                "Resource Injector",
+                "class Bootstrap {void inject(Object object}{}",
+                None
+              )
+            )
+          ),
+          None
+        )
+      }
+    }
+
+    "return a rename request for POST requests with authorization token to the root path" in {
+      Post("/api/try?auth_token=legolas", Request(None, None, Some(Rename("class", "Bootstrap", "ResourceInjector", List(1, 2), Code(None,"Bootstrap.java","Resource Injector","class Bootstrap {void inject(Object object}{}",None))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Request] === Request(
+          None,
+          None,
+          Some(
+            Rename(
+              "class",
+              "Bootstrap",
+              "ResourceInjector",
+              List(1, 2),
+              Code(
+                None,
+                "Bootstrap.java",
+                "Resource Injector",
+                "class Bootstrap {void inject(Object object}{}",
+                None
+              )
+            )
+          )
+        )
+      }
+    }
+
+
+    "return a rename request in JSON form for POST requests with authorization token to the root path" in {
+      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"rename" : { "what": "class", "from":"Bootstrap", "to":"ResourceInjector", "range": [1, 2], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Request] === Request(
+          None,
+          None,
+          Some(
+            Rename(
+              "class",
+              "Bootstrap",
+              "ResourceInjector",
               List(1, 2),
               Code(
                 None,
