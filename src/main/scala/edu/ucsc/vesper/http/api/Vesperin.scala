@@ -31,7 +31,7 @@ trait Vesperin extends HttpService with UserLounge {
           } ~
             (put | post | parameter('method ! "c")) {
               authorize(inTheClub(membership)){
-                entity(as[Request]) {
+                entity(as[Command]) {
                   request =>
                     complete(request)
                 }
