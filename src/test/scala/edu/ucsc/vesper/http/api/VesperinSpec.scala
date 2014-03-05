@@ -113,6 +113,50 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
+    "return a remove request with authorization token for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Request(remove = Some(Remove(what = "class", range = List(1, 2), source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Request] === Request(
+          remove = Some(
+            Remove(
+              what   = "class",
+              range  = List(1, 2),
+              source =
+                Code(
+                  name        = "Bootstrap.java",
+                  description = "Resource Injector",
+                  content     = "class Bootstrap {void inject(Object object}{}}"
+              )
+            )
+          )
+        )
+      }
+    }
+
+
+    "return a remove request in JSON form for POST requests to the root path" in {
+      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"remove" : { "what": "class", "range": [1, 2], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
+        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Request] === Request(
+          None,
+          Some(
+            Remove(
+              "class",
+              List(1, 2),
+              Code(
+                None,
+                "Bootstrap.java",
+                "Resource Injector",
+                "class Bootstrap {void inject(Object object}{}",
+                None
+              )
+            )
+          )
+        )
+      }
+    }
+
   }
 
 }
