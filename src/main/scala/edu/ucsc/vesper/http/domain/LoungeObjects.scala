@@ -28,12 +28,18 @@ object LoungeObjects {
   case class Rename(what: String, where: List[Int], to: String, source: Code)
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List; \n public class Bootstrap {void inject(Object object}{}"} }"""
   case class Optimize(source: Code)
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object}{}"} }"""
+  case class Format(source: Code)
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object}{}"} }"""
+  case class Deduplicate(source: Code)
 
   case class Command(
-        inspect: Option[Inspect]    = None,
-        remove:  Option[Remove]     = None,
-        rename:  Option[Rename]     = None,
-        optimize: Option[Optimize]  = None
+        inspect: Option[Inspect]          = None,
+        remove:  Option[Remove]           = None,
+        rename:  Option[Rename]           = None,
+        optimize: Option[Optimize]        = None,
+        format: Option[Format]            = None,
+        deduplicate: Option[Deduplicate]  = None
   )
 
 
@@ -61,7 +67,15 @@ object LoungeObjects {
     implicit val optimizeFormats = jsonFormat1(Optimize.apply)
   }
 
+  object Format extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val formatFormats = jsonFormat1(Format.apply)
+  }
+
+  object Deduplicate extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val deduplicateFormats = jsonFormat1(Deduplicate.apply)
+  }
+
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat4(Command.apply)
+    implicit val requestFormats = jsonFormat6(Command.apply)
   }
 }

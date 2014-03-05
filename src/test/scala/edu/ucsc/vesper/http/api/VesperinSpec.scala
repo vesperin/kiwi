@@ -12,7 +12,7 @@ import edu.ucsc.vesper.http.domain.LoungeObjects._
 class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   def actorRefFactory = system
 
-  "Vesperin" should {
+  "Vesper" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/api/all") ~> vesperRoutes ~> check {
         responseAs[String] must contain("Morning")
@@ -54,6 +54,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
           ),
           None,
           None,
+          None,
+          None,
           None
         )
       }
@@ -76,6 +78,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
           ),
           None,
           None,
+          None,
+          None,
           None
         )
       }
@@ -96,6 +100,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
           ),
           None,
           None,
+          None,
+          None,
           None
         )
       }
@@ -114,6 +120,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
+          None,
           None,
           None,
           None
@@ -138,6 +146,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
+          None,
           None,
           None
         )
@@ -165,6 +175,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
             )
           ),
           None,
+          None,
+          None,
           None
         )
       }
@@ -189,6 +201,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
+          None,
           None
         )
       }
@@ -214,6 +228,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
+          None,
           None
         )
       }
@@ -234,7 +250,9 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
                 content     = "class Bootstrap {void inject(Object object}{}}"
               )
             )
-          )
+          ),
+          None,
+          None
         )
       }
     }
@@ -246,6 +264,46 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
           None, None, None,
           optimize = Some(
             Optimize(
+              Code(
+                name        = "Bootstrap.java",
+                description = "Resource Injector",
+                content     = "class Bootstrap {void inject(Object object}{}}"
+              )
+            )
+          ),
+          None,
+          None
+        )
+      }
+    }
+
+    "return a format request for POST requests with authentication token to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(format = Some(Format(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] === Command(
+          None, None, None, None,
+          format = Some(
+            Format(
+              Code(
+                name        = "Bootstrap.java",
+                description = "Resource Injector",
+                content     = "class Bootstrap {void inject(Object object}{}}"
+              )
+            )
+          ),
+          None
+        )
+      }
+    }
+
+
+    "return a deduplicate request for POST requests with authentication token to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(deduplicate = Some(Deduplicate(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] === Command(
+          None, None, None, None, None,
+          deduplicate = Some(
+            Deduplicate(
               Code(
                 name        = "Bootstrap.java",
                 description = "Resource Injector",
