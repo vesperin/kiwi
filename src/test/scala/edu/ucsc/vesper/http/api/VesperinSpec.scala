@@ -53,6 +53,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
             )
           ),
           None,
+          None,
           None
         )
       }
@@ -74,6 +75,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
             )
           ),
           None,
+          None,
           None
         )
       }
@@ -93,6 +95,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
             )
           ),
           None,
+          None,
           None
         )
       }
@@ -111,6 +114,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None,
           None
         )
@@ -134,6 +138,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
@@ -159,6 +164,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
               )
             )
           ),
+          None,
           None
         )
       }
@@ -168,8 +174,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/api/try?auth_token=legolas", Command(None, None, Some(Rename("class", List(1, 2), "ResourceInjector", Code(None,"Bootstrap.java","Resource Injector","class Bootstrap {void inject(Object object}{}", None))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Command] === Command(
-          None,
-          None,
+          None, None,
           Some(
             Rename(
               "class",
@@ -183,7 +188,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
                 None
               )
             )
-          )
+          ),
+          None
         )
       }
     }
@@ -193,8 +199,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"rename" : { "what": "class", "where": [1, 2], "to":"ResourceInjector", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Command] === Command(
-          None,
-          None,
+          None, None,
           Some(
             Rename(
               "class",
@@ -206,6 +211,45 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
                 "Resource Injector",
                 "class Bootstrap {void inject(Object object}{}",
                 None
+              )
+            )
+          ),
+          None
+        )
+      }
+    }
+
+
+    "return an optimize request in JSON form for POST requests with authentication header to the root path" in {
+      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"optimize": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}}"} }}""" )) ~>
+        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] === Command(
+          None, None, None,
+          optimize = Some(
+            Optimize(
+              Code(
+                name        = "Bootstrap.java",
+                description = "Resource Injector",
+                content     = "class Bootstrap {void inject(Object object}{}}"
+              )
+            )
+          )
+        )
+      }
+    }
+
+    "return an optimize request for POST requests with authentication token to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(optimize = Some(Optimize(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Command] === Command(
+          None, None, None,
+          optimize = Some(
+            Optimize(
+              Code(
+                name        = "Bootstrap.java",
+                description = "Resource Injector",
+                content     = "class Bootstrap {void inject(Object object}{}}"
               )
             )
           )
