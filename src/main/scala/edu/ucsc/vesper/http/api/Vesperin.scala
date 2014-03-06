@@ -19,34 +19,45 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
     )
   )
 
+  val greetings =
+    path("hi") {
+      get {
+        complete{
+          "Hello, guest. I am Vesper; a lightweight source code curating framework for Java"
+        }
+      }
+    }
+
+  val search =
+    path("search") {
+      authenticate(vesperin) { membership =>
+        get {
+          authorize(isReviewer(membership)){
+            parameter('q){
+              q =>
+                complete((backend ? Get(membership.role, q)).mapTo[Option[Answer]])
+            }
+          }
+        }
+      }
+    }
+
+  val curate =
+    path("try"){
+      authenticate(vesperin) { membership =>
+        (put | post | parameter('method ! "c")) {
+          authorize(isCurator(membership)){
+            entity(as[Command]) {
+              request =>
+                complete((backend ? Curate(membership.auth, request)).mapTo[Option[ChangeSummary]])
+            }
+          }
+        }
+      }
+    }
+
   val vesperRoutes =
     pathPrefix("api") {
-      path("all") {
-        get {
-          complete{
-            "Hello, guest. I am Vesper; a lightweight source code curating framework for Java"
-          }
-        }
-      } ~
-        path("try"){
-          authenticate(vesperin) { membership =>
-            get {
-              authorize(isReviewer(membership)){
-                parameter('q){
-                  q =>
-                    complete((backend ? Get(membership.role, q)).mapTo[Option[Answer]])
-                }
-              }
-            } ~
-              (put | post | parameter('method ! "c")) {
-                authorize(isCurator(membership)){
-                  entity(as[Command]) {
-                    request =>
-                      complete((backend ? Curate(membership.auth, request)).mapTo[Option[ChangeSummary]])
-                  }
-                }
-              }
-          }
-        }
+      greetings ~ search ~ curate
     }
 }

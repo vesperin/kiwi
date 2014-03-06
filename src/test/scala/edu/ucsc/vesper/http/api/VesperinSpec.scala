@@ -19,7 +19,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
   "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
-      Get("/api/all") ~> vesperRoutes ~> check {
+      Get("/api/hi") ~> vesperRoutes ~> check {
         responseAs[String] must contain("Hello")
       }
     }
@@ -31,13 +31,13 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a query for GET requests containing authorization HTTP Header to the root path" in {
-      Get("/api/try?q=curators") ~> addHeader(RawHeader("x-auth-token", "legolas")) ~> vesperRoutes ~> check {
+      Get("/api/search?q=curators") ~> addHeader(RawHeader("x-auth-token", "legolas")) ~> vesperRoutes ~> check {
         responseAs[Answer] === Answer(List("aragorn", "galadriel", "frodo", "legolas", "gandalf"))
       }
     }
 
     "return a query, containing an authentication token, for GET requests to the root path" in {
-      Get("/api/try?auth_token=legolas&q=reviewers") ~> vesperRoutes ~> check {
+      Get("/api/search?auth_token=legolas&q=reviewers") ~> vesperRoutes ~> check {
         responseAs[Answer] === Answer(List("sauron", "thranduil", "gollum", "smaug", "melkor"))
       }
     }
