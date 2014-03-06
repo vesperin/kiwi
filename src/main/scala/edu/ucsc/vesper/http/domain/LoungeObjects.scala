@@ -12,7 +12,13 @@ object LoungeObjects {
   case class Member(username:String, role: Int)
   case class Membership(auth: Auth, role: Role)
 
-  case class Comment(text: String)
+  case class Comment(
+        id: Option[String]        = None,
+        username: Option[String]  = None,
+        text: String,
+        mark: Option[List[Int]]   = None
+  )
+
   case class Code(
         id: Option[String] = None,
         name: String,
@@ -33,6 +39,18 @@ object LoungeObjects {
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object}{}"} }"""
   case class Deduplicate(source: Code)
 
+
+  case class Warning(name: String, description: String, where: Option[List[Int]])
+  case class Edit(message: String, source: Code)
+  case class Failure(message: String)
+
+  // the result of every refactoring
+  case class ChangeSummary(
+        edit: Option[Edit]              = None,
+        warnings: Option[List[Warning]] = None,
+        failure: Option[Failure]        = None
+  )
+
   case class Command(
         inspect: Option[Inspect]          = None,
         remove:  Option[Remove]           = None,
@@ -44,7 +62,7 @@ object LoungeObjects {
 
 
   object Comment extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val commentFormats = jsonFormat1(Comment.apply)
+    implicit val commentFormats = jsonFormat4(Comment.apply)
   }
 
   object Code extends DefaultJsonProtocol with SprayJsonSupport {
@@ -73,6 +91,22 @@ object LoungeObjects {
 
   object Deduplicate extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val deduplicateFormats = jsonFormat1(Deduplicate.apply)
+  }
+
+  object Warning extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val failureFormats = jsonFormat3(Warning.apply)
+  }
+
+  object Edit extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val failureFormats = jsonFormat2(Edit.apply)
+  }
+
+  object Failure extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val failureFormats = jsonFormat1(Failure.apply)
+  }
+
+  object ChangeSummary extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val changeSummaryFormats = jsonFormat3(ChangeSummary.apply)
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
