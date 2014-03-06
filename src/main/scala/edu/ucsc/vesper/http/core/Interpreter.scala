@@ -11,6 +11,7 @@ import edu.ucsc.vesper.http.domain.LoungeObjects.Role
 import scala.Some
 import edu.ucsc.vesper.http.domain.LoungeObjects.Auth
 import edu.ucsc.refactor.util.{Commit, Locations}
+import edu.ucsc.refactor.spi.{Refactoring, Names, Smell}
 
 /**
  * Message object for a request to inspect a source code.
@@ -247,6 +248,58 @@ trait Interpreter extends Configuration {
     result
   }
 
+  private def evalFormat(format: Format): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+
+    val vesperSource: Source  = fromCodeToSrc(format.source)
+
+    val request:ChangeRequest   = ChangeRequest.reformatSource(vesperSource)
+    val change: Change          = refactorer.createChange(request)
+    val commit: Commit          = refactorer.apply(change)
+
+    if(commit != null){
+      if(commit.isValidCommit){
+        val msg:String      = commit.getNameOfChange.getKey + ": " + commit.getNameOfChange.getSummary
+        val updated: Source = commit.getSourceAfterChange
+
+        result = Some(ChangeSummary(edit = Some(Edit(msg, fromSrcToCode(updated)))))
+      }
+    }
+
+    result
+  }
+
+  private def evalDeduplicate(deduplicate: Deduplicate): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+
+    val vesperSource: Source  = fromCodeToSrc(deduplicate.source)
+
+    val issues:java.util.Set[Issue]   = refactorer.detectIssues(vesperSource)
+    val itr:java.util.Iterator[Issue] = issues.iterator()
+
+    while(itr.hasNext){
+      val each:Issue = itr.next
+      val name: Smell = each.getName
+      if (Names.hasAvailableResponse(name)) {
+        if (Names.from(each.getName).isSame(Refactoring.DEDUPLICATE)) {
+          val change: Change = refactorer.createChange(ChangeRequest.forIssue(each))
+          val commit: Commit = refactorer.apply(change)
+
+          if(commit != null){
+            if(commit.isValidCommit){
+              val msg:String      = commit.getNameOfChange.getKey + ": " + commit.getNameOfChange.getSummary
+              val updated: Source = commit.getSourceAfterChange
+
+              result = Some(ChangeSummary(edit = Some(Edit(msg, fromSrcToCode(updated)))))
+            }
+          }
+        }
+      }
+    }
+
+    result
+  }
+
 
   def eval(who:Auth, command: Command): Option[ChangeSummary] = {
 
@@ -266,6 +319,8 @@ trait Interpreter extends Configuration {
       case remove:Remove      => return evalRemove(remove)
       case rename:Rename      => return evalRename(rename)
       case optimize:Optimize  => return evalOptimize(optimize)
+      case format:Format      => return evalFormat(format)
+      case deduplicate:Deduplicate  => return evalDeduplicate(deduplicate)
     }
 
     None
