@@ -54,13 +54,13 @@ object LoungeObjects {
   )
 
   case class Command(
-                      inspect: Option[Inspect]          = None,
-                      remove:  Option[Remove]           = None//,
-//                      rename:  Option[Rename]           = None,
-//                      optimize: Option[Optimize]        = None,
-//                      format: Option[Format]            = None,
-//                      deduplicate: Option[Deduplicate]  = None
-                      )
+        inspect: Option[Inspect]          = None,
+        remove:  Option[Remove]           = None,
+        rename:  Option[Rename]           = None,
+        optimize: Option[Optimize]        = None,
+        format: Option[Format]            = None,
+        deduplicate: Option[Deduplicate]  = None
+  )
 
 
   object Comment extends DefaultJsonProtocol with SprayJsonSupport {
@@ -116,6 +116,6 @@ object LoungeObjects {
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat2(Command.apply)
+    implicit val requestFormats = jsonFormat6(Command.apply)
   }
 }

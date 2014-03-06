@@ -1,10 +1,11 @@
 package edu.ucsc.vesper.http.api
 
 import spray.routing.HttpService
-import edu.ucsc.vesper.http.core.{Get, InterpreterActor, AsyncSupport, UserLounge}
-import edu.ucsc.vesper.http.domain.LoungeObjects.{Answer, Command}
+import edu.ucsc.vesper.http.core._
+import edu.ucsc.vesper.http.domain.LoungeObjects.{ChangeSummary, Answer, Command}
 import akka.actor.Props
 import akka.routing.RoundRobinRouter
+import edu.ucsc.vesper.http.core.Get
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -41,7 +42,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
                 authorize(isCurator(membership)){
                   entity(as[Command]) {
                     request =>
-                      complete(request)
+                      complete((backend ? Curate(membership.auth, request)).mapTo[Option[ChangeSummary]])
                   }
                 }
               }
