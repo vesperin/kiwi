@@ -10,7 +10,7 @@ import org.eclipse.jdt.core.dom.{MethodDeclaration, ASTNode}
 import edu.ucsc.vesper.http.domain.LoungeObjects.Role
 import scala.Some
 import edu.ucsc.vesper.http.domain.LoungeObjects.Auth
-import edu.ucsc.refactor.util.Locations
+import edu.ucsc.refactor.util.{Commit, Locations}
 
 /**
  * Message object for a request to inspect a source code.
@@ -109,6 +109,124 @@ trait Interpreter extends Configuration {
 
   }
 
+  private def createRemoveChangeRequest(what: String, selection: SourceSelection): ChangeRequest = {
+    what match {
+      case "class"      => ChangeRequest.deleteClass(selection)
+      case "method"     => ChangeRequest.deleteMethod(selection)
+      case "field"      => ChangeRequest.deleteField(selection)
+      case "parameter"  => ChangeRequest.deleteParameter(selection)
+      case "region"     => ChangeRequest.deleteRegion(selection)
+      case _=> throw new NoSuchElementException(what + " was not found")
+    }
+  }
+
+  private def fromSrcToCode(source: Source): Code = {
+
+    val sourceId: Option[String]  = if (source.getId != null) Some(source.getId) else None
+    val sourceName: String        = source.getName
+    val sourceDesc: String        = source.getDescription
+    val sourceCont: String        = source.getContents
+
+    val srcComments: Option[List[Comment]] = if(source.getNotes.isEmpty) None else {
+      val itr: java.util.Iterator[Note] = source.getNotes.iterator
+
+      var allComments:mutable.Buffer[Comment] = mutable.Buffer.empty[Comment]
+      while(itr.hasNext){
+        val each: Note = itr.next
+        val nodeId: Option[String]    = if(each.getId == null) None else Some(each.getId)
+        val username: Option[String]  = if(each.getUser == null) None else Some(each.getUser)
+        val mark:Option[List[Int]]    = if(each.getMark == null) None else {
+          Some(List(each.getMark.getStart.getOffset, each.getMark.getEnd.getOffset))
+        }
+
+        allComments += Comment(nodeId, username, each.getContent, mark)
+      }
+
+      Some(allComments.toList)
+    }
+
+    Code(sourceId, sourceName, sourceDesc, sourceCont, srcComments)
+  }
+
+  private def removeMember(what: String, where: List[Int], source: Source): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+    try {
+      val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+      val request: ChangeRequest  = createRemoveChangeRequest(what, select)
+
+      val change: Change          = refactorer.createChange(request)
+      val commit: Commit          = refactorer.apply(change)
+
+      if(commit != null){
+        if(commit.isValidCommit){
+          val msg:String      = commit.getNameOfChange.getKey + ": " + commit.getNameOfChange.getSummary
+          val updated: Source = commit.getSourceAfterChange
+
+          result = Some(ChangeSummary(edit = Some(Edit(msg, fromSrcToCode(updated)))))
+        }
+      }
+    } catch {
+      case e: Throwable => None
+    }
+
+    result
+  }
+
+  private def evalRemove(delete: Remove): Option[ChangeSummary] = {
+    val what:String           = delete.what
+    val where:List[Int]       = delete.where
+    val vesperSource: Source  = fromCodeToSrc(delete.source)
+
+    removeMember(what, where, vesperSource)
+  }
+
+  private def createRenameChangeRequest(what: String, name: String, selection: SourceSelection): ChangeRequest = {
+    what match {
+      case "class"      => ChangeRequest.deleteClass(selection)
+      case "method"     => ChangeRequest.deleteMethod(selection)
+      case "field"      => ChangeRequest.deleteField(selection)
+      case "parameter"  => ChangeRequest.deleteParameter(selection)
+      case "region"     => ChangeRequest.deleteRegion(selection)
+      case _=> throw new NoSuchElementException(what + " was not found")
+    }
+  }
+
+  private def renameMember(what: String, name: String, where: List[Int], source: Source): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+    try {
+      val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+      val request: ChangeRequest  = createRenameChangeRequest(what, name, select)
+
+      val change: Change          = refactorer.createChange(request)
+      val commit: Commit          = refactorer.apply(change)
+
+      if(commit != null){
+        if(commit.isValidCommit){
+          val msg:String      = commit.getNameOfChange.getKey + ": " + commit.getNameOfChange.getSummary
+          val updated: Source = commit.getSourceAfterChange
+
+          result = Some(ChangeSummary(edit = Some(Edit(msg, fromSrcToCode(updated)))))
+        }
+      }
+    } catch {
+      case e: Throwable => None
+    }
+
+    result
+  }
+
+  private def evalRename(rename: Rename): Option[ChangeSummary] = {
+    val what:String           = rename.what
+    val where:List[Int]       = rename.where
+    val name: String          = rename.to
+    val vesperSource: Source  = fromCodeToSrc(rename.source)
+
+    renameMember(what, name, where, vesperSource)
+
+    None
+  }
+
+
   def eval(who:Auth, command: Command): Option[ChangeSummary] = {
 
     val answer = List(
@@ -124,6 +242,8 @@ trait Interpreter extends Configuration {
 
     answer(0) match {
       case inspect:Inspect => return evalInspect(inspect)
+      case remove:Remove   => return evalRemove(remove)
+      case rename:Rename   => return evalRename(rename)
     }
 
     None
