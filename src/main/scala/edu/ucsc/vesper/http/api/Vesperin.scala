@@ -1,13 +1,13 @@
 package edu.ucsc.vesper.http.api
 
 import spray.routing.HttpService
-import edu.ucsc.vesper.http.domain.LoungeObjects._
-import edu.ucsc.vesper.http.core.UserLounge
+import edu.ucsc.vesper.http.core.{AsyncSupport, UserLounge}
+import edu.ucsc.vesper.http.domain.LoungeObjects.Command
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Vesperin extends HttpService with UserLounge {
+trait Vesperin extends HttpService with AsyncSupport with UserLounge {
   val vesperRoutes =
     pathPrefix("api") {
       path("all") {
@@ -17,27 +17,27 @@ trait Vesperin extends HttpService with UserLounge {
           }
         }
       } ~
-      path("try"){
-        authenticate(membersOnly) { membership =>
-          get {
-            authorize(inTheClub(membership)){
-              parameter('q){
-                q =>
-                  complete {
-                    "Morning,  " + membership.auth.userId + ". You asked: " + s"'$q'"
-                  }
-              }
-            }
-          } ~
-            (put | post | parameter('method ! "c")) {
-              authorize(inTheClub(membership)){
-                entity(as[Request]) {
-                  request =>
-                    complete(request)
+        path("try"){
+          authenticate(vesperin) { membership =>
+            get {
+              authorize(isReviewer(membership)){
+                parameter('q){
+                  q =>
+                    complete {
+                      "Morning,  " + membership.auth.userId + ". You asked: " + s"'$q'"
+                    }
                 }
               }
-            }
+            } ~
+              (put | post | parameter('method ! "c")) {
+                authorize(isCurator(membership)){
+                  entity(as[Command]) {
+                    request =>
+                      complete(request)
+                  }
+                }
+              }
+          }
         }
-      }
     }
 }

@@ -1,11 +1,12 @@
 package edu.ucsc.vesper.http.core
 
+import spray.routing.{AuthenticationFailedRejection, RequestContext, HttpService}
+import scala.concurrent.Future
+import spray.routing.authentication._
+import scala.Some
+import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.LoungeObjects._
-import scala.concurrent.Future
-import spray.routing.{AuthenticationFailedRejection, RequestContext, HttpService}
-import spray.routing.authentication._
-import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -15,7 +16,8 @@ trait UserLounge extends Configuration {
 
   implicit def executionContext = actorRefFactory.dispatcher
 
-  private def createMembership(member: Member): Option[Membership] = {
+
+  def createMembership(member: Member): Option[Membership] = {
     val pwd = getPassword(member.username)
     pwd match {
       case Some(x) =>
@@ -26,14 +28,14 @@ trait UserLounge extends Configuration {
     }
   }
 
-  private def doAuthenticate(username: String): Future[Option[Membership]] = {
+  def doAuthenticate(username: String): Future[Option[Membership]] = {
     getMember(username) match  {
       case Some(x) => Future { createMembership(x) }
       case _=>  Future { None }
     }
   }
 
-  private def getMember(username: String) : Option[Member] = {
+  def getMember(username: String) : Option[Member] = {
     if(club.contains(username)){
       Some(Member(username, club(username)))
     } else {
@@ -42,7 +44,7 @@ trait UserLounge extends Configuration {
   }
 
   /* Extract the token from an HTTP Header or URL. */
-  private def getToken(ctx: RequestContext): Option[String] = {
+  def getToken(ctx: RequestContext): Option[String] = {
     //This is needed in case the auth_token is passed as a GET parameter.
     //It's up to you to remove this part of code or not.
     val query = ctx.request.uri.query.get("auth_token")
@@ -54,12 +56,24 @@ trait UserLounge extends Configuration {
     }
   }
 
+  private def getPassword(username: String): Option[String] = {
+    if(passwords.contains(username)) {
+      Some(passwords(username))
+    } else {
+      None
+    }
+  }
 
-  def inTheClub(membership: Membership): Boolean = {
+
+  def isCurator(membership: Membership): Boolean = {
+    membership.role.id == 0
+  }
+
+  def isReviewer(membership: Membership): Boolean = {
     membership.role.id == 0 || membership.role.id == 1
   }
 
-  def membersOnly: RequestContext => Future[Authentication[Membership]] = {
+  def vesperin: RequestContext => Future[Authentication[Membership]] = {
     ctx: RequestContext =>
       val token = getToken(ctx)
       if(token.isEmpty){
@@ -72,13 +86,4 @@ trait UserLounge extends Configuration {
             Left(AuthenticationFailedRejection(CredentialsMissing, List()))
       }
   }
-
-  private def getPassword(username: String): Option[String] = {
-    if(passwords.contains(username)) {
-      Some(passwords(username))
-    } else {
-      None
-    }
-  }
-
 }

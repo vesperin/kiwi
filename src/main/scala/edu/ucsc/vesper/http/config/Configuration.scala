@@ -1,9 +1,9 @@
 package edu.ucsc.vesper.http.config
 
 import com.typesafe.config.{ConfigValue, ConfigFactory}
-import scala.collection.mutable
 import java.util
 import java.util.Map.Entry
+import scala.collection.mutable
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -16,7 +16,6 @@ trait Configuration {
 
   /** a list of user entries **/
   lazy val users = config.getConfig("users")
-
   /** a username->password map **/
   lazy val passwords = mutable.Map.empty[String, String]
   val userIterator:util.Iterator[Entry[String, ConfigValue]] = users.entrySet().iterator()
@@ -27,7 +26,6 @@ trait Configuration {
 
   /** a list of role entries **/
   lazy val roles =  config.getConfig("roles")
-
   /** a username->role map **/
   lazy val club = mutable.Map.empty[String, Int]
   val roleIterator:util.Iterator[Entry[String, ConfigValue]] = roles.entrySet().iterator()
@@ -35,4 +33,5 @@ trait Configuration {
     val  x: Entry[String, ConfigValue] = roleIterator.next()
     club(x.getKey) = x.getValue.render.toInt
   }
+
 }
