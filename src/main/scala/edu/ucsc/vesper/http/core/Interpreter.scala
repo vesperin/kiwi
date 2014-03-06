@@ -27,17 +27,17 @@ trait Interpreter extends Configuration {
   val Curator     = 0
   val Reviewer    = 1
 
-  def ask(who:Role, question:String): Future[Option[Answer]] = {
+  def ask(who:Role, question:String): Option[Answer] = {
 
     def f(x: Int): Boolean = if(x == Reviewer) true else false
     def g(x: Int): Boolean = if(x == Curator)  true else false
 
-    if(who.id != Curator) return Future { None }
+    if(who.id != Curator) return None
 
     question  match {
-      case "curators"   => Future { Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList)) }
-      case "reviewers"  => Future { Some(Answer(club.filter {case (k,v) => f(v)}.keySet.toList)) }
-      case "everybody"  => Future { Some(Answer(passwords.keySet.toList)) }
+      case "curators"   => Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList))
+      case "reviewers"  => Some(Answer(club.filter {case (k,v) => f(v)}.keySet.toList))
+      case "everybody"  => Some(Answer(passwords.keySet.toList))
     }
   }
 }

@@ -107,6 +107,10 @@ object LoungeObjects {
     implicit val failureFormats = jsonFormat1(Failure.apply)
   }
 
+  object Answer extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val answerFormats = jsonFormat1(Answer.apply)
+  }
+
   object ChangeSummary extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val changeSummaryFormats = jsonFormat3(ChangeSummary.apply)
   }
