@@ -36,7 +36,7 @@ trait Interpreter extends Configuration {
     def f(x: Int): Boolean = if(x == Reviewer) true else false
     def g(x: Int): Boolean = if(x == Curator)  true else false
 
-    if(who.id != Curator) return None
+    if(who.id != Curator) return Some(Answer(List("You are not authorized to see these resources.")))
 
     question  match {
       case "curators"   => Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList))
@@ -104,8 +104,7 @@ trait Interpreter extends Configuration {
       Some(ChangeSummary(warnings = Some(warnings.toList)))
     } catch {
       case e: Throwable =>
-        println(e)
-        None
+        Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
   }
@@ -167,7 +166,7 @@ trait Interpreter extends Configuration {
         }
       }
     } catch {
-      case e: Throwable => None
+      case e: Throwable => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
     result
@@ -210,7 +209,7 @@ trait Interpreter extends Configuration {
         }
       }
     } catch {
-      case e: Throwable => None
+      case e: Throwable => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
     result
@@ -223,8 +222,6 @@ trait Interpreter extends Configuration {
     val vesperSource: Source  = fromCodeToSrc(rename.source)
 
     renameMember(what, name, where, vesperSource)
-
-    None
   }
 
   private def evalOptimize(optimize: Optimize): Option[ChangeSummary] = {

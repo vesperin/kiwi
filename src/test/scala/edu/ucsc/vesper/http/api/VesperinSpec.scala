@@ -42,6 +42,12 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
+    "return an answer for Get request to the root path stating the user is not authorized to see the requested resources" in {
+      Get("/api/search?q=everybody&auth_token=gollum") ~> vesperRoutes ~> check {
+        responseAs[Answer] === Answer(List("You are not authorized to see these resources."))
+      }
+    }
+
     "return an inspect request in JSON form for POST requests to the root path" in {
       Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
