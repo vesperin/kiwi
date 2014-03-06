@@ -20,10 +20,10 @@ object LoungeObjects {
   )
 
   case class Code(
-        id: Option[String] = None,
-        name: String,
-        description: String,
-        content: String, comments: Option[List[Comment]] = None
+       id: Option[String]                               = None,
+       name: String,
+       description: String,
+       content: String, comments: Option[List[Comment]] = None
   )
 
   // e.g., """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }"""
@@ -43,6 +43,8 @@ object LoungeObjects {
   case class Warning(name: String, description: String, where: Option[List[Int]])
   case class Edit(message: String, source: Code)
   case class Failure(message: String)
+
+  case class Answer(items: List[String])
 
   // the result of every refactoring
   case class ChangeSummary(
@@ -103,6 +105,10 @@ object LoungeObjects {
 
   object Failure extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val failureFormats = jsonFormat1(Failure.apply)
+  }
+
+  object Answer extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val answerFormats = jsonFormat1(Answer.apply)
   }
 
   object ChangeSummary extends DefaultJsonProtocol with SprayJsonSupport {

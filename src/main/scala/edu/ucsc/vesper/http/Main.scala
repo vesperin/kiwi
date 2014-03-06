@@ -1,17 +1,15 @@
 package edu.ucsc.vesper.http
 
-import akka.actor.{Props, ActorSystem}
-import edu.ucsc.vesper.http.api.VesperinApi
-import scala.util.Properties
-import akka.util.Timeout
+import akka.actor.{ActorSystem, Props}
 import akka.io.IO
 import spray.can.Http
+import akka.util.Timeout
 import scala.concurrent.duration._
+import util.Properties
+import edu.ucsc.vesper.http.api.VesperinApi
 
-/**
- * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
- */
-class Main extends App {
+object Main extends App {
+
   // The ActorSystem to host our application in
   implicit val system = ActorSystem("on-vesper-http")
 
@@ -24,4 +22,5 @@ class Main extends App {
 
   // start a new HTTP server on port 8080 with our service actor as the handler
   IO(Http) ! Http.Bind(service, "0.0.0.0", port)
+
 }

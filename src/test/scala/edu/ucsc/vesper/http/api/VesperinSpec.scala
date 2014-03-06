@@ -2,9 +2,11 @@ package edu.ucsc.vesper.http.api
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
-import spray.http.HttpHeaders.RawHeader
 import spray.http.{MediaTypes, HttpEntity}
 import edu.ucsc.vesper.http.domain.LoungeObjects._
+import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit._
+import spray.http.HttpHeaders.RawHeader
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -12,10 +14,13 @@ import edu.ucsc.vesper.http.domain.LoungeObjects._
 class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   def actorRefFactory = system
 
-  "Vesper" should {
+  // reason of this addition? see https://groups.google.com/forum/#!msg/spray-user/o8DtI6VUMbA/n9tguTb_1noJ
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
+
+  "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/api/all") ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Morning")
+        responseAs[String] must contain("Hello")
       }
     }
 
@@ -26,295 +31,107 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a query for GET requests containing authorization HTTP Header to the root path" in {
-      Get("/api/try?q=blue") ~> addHeader(RawHeader("x-auth-token", "legolas")) ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Morning")
+      Get("/api/try?q=curators") ~> addHeader(RawHeader("x-auth-token", "legolas")) ~> vesperRoutes ~> check {
+        responseAs[Answer] === Answer(List("aragorn", "galadriel", "frodo", "legolas", "gandalf"))
       }
     }
 
     "return a query, containing an authentication token, for GET requests to the root path" in {
-      Get("/api/try?auth_token=legolas&q=blue") ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Morning")
+      Get("/api/try?auth_token=legolas&q=reviewers") ~> vesperRoutes ~> check {
+        responseAs[Answer] === Answer(List("sauron", "thranduil", "gollum", "smaug", "melkor"))
       }
     }
-
 
     "return an inspect request in JSON form for POST requests to the root path" in {
-      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}}"} }}""" )) ~>
+      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          inspect = Some(
-            Inspect(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None,
-          None
+
+        val answers = List(
+          ChangeSummary(None,Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))))),None),
+          ChangeSummary(None,Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))),None)
         )
+
+        answers.contains(responseAs[ChangeSummary])
       }
     }
 
 
-    "return an inspect request for POST requests to the root path" in {
-      Post("/api/try", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        addHeader(RawHeader("x-auth-token", "legolas")) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          inspect = Some(
-            Inspect(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-    "return an inspect request with authorization token for POST requests to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          inspect = Some(
-            Inspect(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-    "return an inspect request with authorization token for PUT requests to the root path" in {
-      Put("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          inspect = Some(
-            Inspect(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-    "return a remove request with authorization token for POST requests with authorization token to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(remove = Some(Remove(what = "class", where = List(1, 2), source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None,
-          remove = Some(
-            Remove(
-              what   = "class",
-              where  = List(1, 2),
-              source =
-                Code(
-                  name        = "Bootstrap.java",
-                  description = "Resource Injector",
-                  content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-
-    "return a remove request in JSON form for POST requests containing authorization HTTP Header to the root path" in {
-      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"remove" : { "what": "class", "where": [1, 2], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
-        addHeader(RawHeader("x-auth-token", "legolas")) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None,
-          Some(
-            Remove(
-              "class",
-              List(1, 2),
-              Code(
-                None,
-                "Bootstrap.java",
-                "Resource Injector",
-                "class Bootstrap {void inject(Object object}{}",
-                None
-              )
-            )
-          ),
-          None,
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-    "return a rename request for POST requests with authorization token to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(None, None, Some(Rename("class", List(1, 2), "ResourceInjector", Code(None,"Bootstrap.java","Resource Injector","class Bootstrap {void inject(Object object}{}", None))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None,
-          Some(
-            Rename(
-              "class",
-              List(1, 2),
-              "ResourceInjector",
-              Code(
-                None,
-                "Bootstrap.java",
-                "Resource Injector",
-                "class Bootstrap {void inject(Object object}{}",
-                None
-              )
-            )
-          ),
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-
-    "return a rename request in JSON form for POST requests with authorization token to the root path" in {
-      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"rename" : { "what": "class", "where": [1, 2], "to":"ResourceInjector", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}""" )) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None,
-          Some(
-            Rename(
-              "class",
-              List(1, 2),
-              "ResourceInjector",
-              Code(
-                None,
-                "Bootstrap.java",
-                "Resource Injector",
-                "class Bootstrap {void inject(Object object}{}",
-                None
-              )
-            )
-          ),
-          None,
-          None,
-          None
-        )
-      }
-    }
-
-
-    "return an optimize request in JSON form for POST requests with authentication header to the root path" in {
-      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"optimize": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}}"} }}""" )) ~>
-        addHeader(RawHeader("x-auth-token", "legolas")) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None, None,
-          optimize = Some(
-            Optimize(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None
-        )
-      }
-    }
-
-    "return an optimize request for POST requests with authentication token to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(optimize = Some(Optimize(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None, None,
-          optimize = Some(
-            Optimize(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None,
-          None
-        )
-      }
-    }
-
-    "return a format request for POST requests with authentication token to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(format = Some(Format(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None, None, None,
-          format = Some(
-            Format(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          ),
-          None
-        )
-      }
-    }
-
-
-    "return a deduplicate request for POST requests with authentication token to the root path" in {
-      Post("/api/try?auth_token=legolas", Command(deduplicate = Some(Deduplicate(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Command] === Command(
-          None, None, None, None, None,
-          deduplicate = Some(
-            Deduplicate(
-              Code(
-                name        = "Bootstrap.java",
-                description = "Resource Injector",
-                content     = "class Bootstrap {void inject(Object object}{}}"
-              )
-            )
-          )
-        )
-      }
-    }
-
+//    "return an inspect request in JSON form for POST requests to the root path" in {
+//      Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}}"} }}""" )) ~>
+//        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+//        sealRoute(vesperRoutes) ~> check {
+//        responseAs[Command] === Command(
+//          inspect = Some(
+//            Inspect(
+//              Code(
+//                name        = "Bootstrap.java",
+//                description = "Resource Injector",
+//                content     = "class Bootstrap {void inject(Object object}{}}"
+//              )
+//            )
+//          ),
+//          None
+//        )
+//      }
+//    }
+//
+//
+//    "return an inspect request for POST requests to the root path" in {
+//      Post("/api/try", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+//        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+//        sealRoute(vesperRoutes) ~> check {
+//        responseAs[Command] === Command(
+//          inspect = Some(
+//            Inspect(
+//              Code(
+//                name        = "Bootstrap.java",
+//                description = "Resource Injector",
+//                content     = "class Bootstrap {void inject(Object object}{}}"
+//              )
+//            )
+//          ),
+//          None
+//        )
+//      }
+//    }
+//
+//    "return an inspect request with authorization token for POST requests to the root path" in {
+//      Post("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+//        sealRoute(vesperRoutes) ~> check {
+//        responseAs[Command] === Command(
+//          inspect = Some(
+//            Inspect(
+//              Code(
+//                name        = "Bootstrap.java",
+//                description = "Resource Injector",
+//                content     = "class Bootstrap {void inject(Object object}{}}"
+//              )
+//            )
+//          ),
+//          None
+//        )
+//      }
+//    }
+//
+//    "return an inspect request with authorization token for PUT requests to the root path" in {
+//      Put("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object}{}}"))))) ~>
+//        sealRoute(vesperRoutes) ~> check {
+//        responseAs[Command] === Command(
+//          inspect = Some(
+//            Inspect(
+//              Code(
+//                name        = "Bootstrap.java",
+//                description = "Resource Injector",
+//                content     = "class Bootstrap {void inject(Object object}{}}"
+//              )
+//            )
+//          ),
+//          None
+//        )
+//      }
+//    }
+//
   }
 
 }
