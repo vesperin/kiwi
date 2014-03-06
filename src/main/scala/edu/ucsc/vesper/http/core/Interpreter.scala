@@ -226,6 +226,27 @@ trait Interpreter extends Configuration {
     None
   }
 
+  private def evalOptimize(optimize: Optimize): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+
+    val vesperSource: Source  = fromCodeToSrc(optimize.source)
+
+    val request:ChangeRequest   = ChangeRequest.optimizeImports(vesperSource)
+    val change: Change          = refactorer.createChange(request)
+    val commit: Commit          = refactorer.apply(change)
+
+    if(commit != null){
+      if(commit.isValidCommit){
+        val msg:String      = commit.getNameOfChange.getKey + ": " + commit.getNameOfChange.getSummary
+        val updated: Source = commit.getSourceAfterChange
+
+        result = Some(ChangeSummary(edit = Some(Edit(msg, fromSrcToCode(updated)))))
+      }
+    }
+
+    result
+  }
+
 
   def eval(who:Auth, command: Command): Option[ChangeSummary] = {
 
@@ -241,9 +262,10 @@ trait Interpreter extends Configuration {
     println(who.userId + " is curating at " + DateTime.now + "\n")
 
     answer(0) match {
-      case inspect:Inspect => return evalInspect(inspect)
-      case remove:Remove   => return evalRemove(remove)
-      case rename:Rename   => return evalRename(rename)
+      case inspect:Inspect    => return evalInspect(inspect)
+      case remove:Remove      => return evalRemove(remove)
+      case rename:Rename      => return evalRename(rename)
+      case optimize:Optimize  => return evalOptimize(optimize)
     }
 
     None
