@@ -24,7 +24,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       path("all") {
         get {
           complete{
-            "Morning, guest."
+            "Hello, guest. I am Vesper; a lightweight source code curating framework for Java"
           }
         }
       } ~

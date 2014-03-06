@@ -20,7 +20,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/api/all") ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Morning")
+        responseAs[String] must contain("Hello")
       }
     }
 
