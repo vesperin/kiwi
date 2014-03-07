@@ -26,8 +26,6 @@ case class Get(who:Role, question: String)
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 trait Interpreter extends Configuration with VesperConversions {
-  val refactorer: Refactorer = Vesper.createRefactorer()
-
   val Curator     = 0
   val Reviewer    = 1
 
@@ -46,7 +44,7 @@ trait Interpreter extends Configuration with VesperConversions {
   }
 
 
-  private def evalInspect(inspect: Inspect): Option[ChangeSummary] = {
+  private def evalInspect(refactorer: Refactorer, inspect: Inspect): Option[ChangeSummary] = {
     try {
       val vesperSource: Source = asSource(inspect.source)
 
@@ -76,7 +74,7 @@ trait Interpreter extends Configuration with VesperConversions {
     }
   }
 
-  private def removeMember(what: String, where: List[Int], source: Source): Option[ChangeSummary] = {
+  private def removeMember(refactorer:Refactorer, what: String, where: List[Int], source: Source): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
     try {
       val select: SourceSelection = new SourceSelection(source, where(0), where(1))
@@ -97,12 +95,12 @@ trait Interpreter extends Configuration with VesperConversions {
     result
   }
 
-  private def evalRemove(delete: Remove): Option[ChangeSummary] = {
+  private def evalRemove(refactorer: Refactorer, delete: Remove): Option[ChangeSummary] = {
     val what:String           = delete.what
     val where:List[Int]       = delete.where
     val vesperSource: Source  = asSource(delete.source)
 
-    removeMember(what, where, vesperSource)
+    removeMember(refactorer, what, where, vesperSource)
   }
 
   private def createRenameChangeRequest(what: String, name: String, selection: SourceSelection): ChangeRequest = {
@@ -116,7 +114,7 @@ trait Interpreter extends Configuration with VesperConversions {
     }
   }
 
-  private def renameMember(what: String, name: String, where: List[Int], source: Source): Option[ChangeSummary] = {
+  private def renameMember(refactorer: Refactorer, what: String, name: String, where: List[Int], source: Source): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
     try {
       val select: SourceSelection = new SourceSelection(source, where(0), where(1))
@@ -137,16 +135,16 @@ trait Interpreter extends Configuration with VesperConversions {
     result
   }
 
-  private def evalRename(rename: Rename): Option[ChangeSummary] = {
+  private def evalRename(refactorer: Refactorer, rename: Rename): Option[ChangeSummary] = {
     val what:String           = rename.what
     val where:List[Int]       = rename.where
     val name: String          = rename.to
     val vesperSource: Source  = asSource(rename.source)
 
-    renameMember(what, name, where, vesperSource)
+    renameMember(refactorer, what, name, where, vesperSource)
   }
 
-  private def evalOptimize(optimize: Optimize): Option[ChangeSummary] = {
+  private def evalOptimize(refactorer: Refactorer, optimize: Optimize): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
 
     val vesperSource: Source  = asSource(optimize.source)
@@ -164,7 +162,7 @@ trait Interpreter extends Configuration with VesperConversions {
     result
   }
 
-  private def evalFormat(format: Format): Option[ChangeSummary] = {
+  private def evalFormat(refactorer: Refactorer, format: Format): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
 
     val vesperSource: Source  = asSource(format.source)
@@ -182,7 +180,7 @@ trait Interpreter extends Configuration with VesperConversions {
     result
   }
 
-  private def evalDeduplicate(deduplicate: Deduplicate): Option[ChangeSummary] = {
+  private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
 
     val vesperSource: Source      = asSource(deduplicate.source)
@@ -232,6 +230,8 @@ trait Interpreter extends Configuration with VesperConversions {
 
   def eval(who:Auth, command: Command): Option[ChangeSummary] = {
 
+    val environment: Refactorer = Vesper.createRefactorer()
+
     val answer = List(
       command.inspect,
       command.remove,
@@ -245,12 +245,12 @@ trait Interpreter extends Configuration with VesperConversions {
     println(who.userId + " is curating at " + DateTime.now + "\n")
 
     answer(0) match {
-      case inspect:Inspect          => return evalInspect(inspect)
-      case remove:Remove            => return evalRemove(remove)
-      case rename:Rename            => return evalRename(rename)
-      case optimize:Optimize        => return evalOptimize(optimize)
-      case format:Format            => return evalFormat(format)
-      case deduplicate:Deduplicate  => return evalDeduplicate(deduplicate)
+      case inspect:Inspect          => return evalInspect(environment, inspect)
+      case remove:Remove            => return evalRemove(environment, remove)
+      case rename:Rename            => return evalRename(environment, rename)
+      case optimize:Optimize        => return evalOptimize(environment, optimize)
+      case format:Format            => return evalFormat(environment, format)
+      case deduplicate:Deduplicate  => return evalDeduplicate(environment, deduplicate)
       case publish:Publish          => return evalPublish(who, publish)
     }
 

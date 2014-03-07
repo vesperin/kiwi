@@ -4,8 +4,7 @@ import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 import spray.http.{MediaTypes, HttpEntity}
 import edu.ucsc.vesper.http.domain.LoungeObjects._
-import scala.concurrent.duration.FiniteDuration
-import java.util.concurrent.TimeUnit._
+import scala.concurrent.duration._
 import spray.http.HttpHeaders.RawHeader
 
 /**
@@ -59,6 +58,19 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         )
 
         answers.contains(responseAs[ChangeSummary])
+      }
+    }
+
+    "return an inspect request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+
+          val answers = List(
+            ChangeSummary(warnings = Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42)))))),
+            ChangeSummary(warnings = Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))))
+          )
+
+          answers.contains(responseAs[ChangeSummary])
       }
     }
 
