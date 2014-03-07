@@ -23,32 +23,38 @@ object LoungeObjects {
        id: Option[String]                               = None,
        name: String,
        description: String,
+       version: Option[String]                          = None,
        content: String, comments: Option[List[Comment]] = None
   )
 
-  // e.g., """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }"""
+  case class Draft(cause: String, description: String, timestamp: Long, before: Code, after: Code)
+
+  // e.g., """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
   case class Inspect(source: Code)
-  // """{ "what": "class", "where": ["123", "132"], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }"""
+  // """{ "what": "class", "where": ["123", "132"], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
   case class Remove(what: String, where: List[Int], source: Code)
-  //"""{"rename" : { "what": "class", "where": [1, 2], "to":"ResourceInjector", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object}{}"} }}"""
+  //"""{"rename" : { "what": "class", "where": [1, 2], "to":"ResourceInjector", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }}"""
   case class Rename(what: String, where: List[Int], to: String, source: Code)
-  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List; \n public class Bootstrap {void inject(Object object}{}"} }"""
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List; \n public class Bootstrap {void inject(Object object){}"} }"""
   case class Optimize(source: Code)
-  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object}{}"} }"""
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Format(source: Code)
-  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object}{}"} }"""
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Deduplicate(source: Code)
+  // drafts' sources
+  case class Publish(drafts: List[Draft])
 
 
   case class Warning(name: String, description: String, where: Option[List[Int]])
-  case class Edit(message: String, source: Code)
   case class Failure(message: String)
+  case class Info(messages: List[String])
 
   case class Answer(items: List[String])
 
   // the result of every refactoring
   case class ChangeSummary(
-        edit: Option[Edit]              = None,
+        draft: Option[Draft]            = None,
+        info: Option[Info]              = None,
         warnings: Option[List[Warning]] = None,
         failure: Option[Failure]        = None
   )
@@ -59,7 +65,8 @@ object LoungeObjects {
         rename:  Option[Rename]           = None,
         optimize: Option[Optimize]        = None,
         format: Option[Format]            = None,
-        deduplicate: Option[Deduplicate]  = None
+        deduplicate: Option[Deduplicate]  = None,
+        publish: Option[Publish]          = None
   )
 
 
@@ -68,7 +75,11 @@ object LoungeObjects {
   }
 
   object Code extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val codeFormats = jsonFormat5(Code.apply)
+    implicit val codeFormats = jsonFormat6(Code.apply)
+  }
+
+  object Draft extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val codeFormats = jsonFormat5(Draft.apply)
   }
 
   object Inspect extends DefaultJsonProtocol with SprayJsonSupport {
@@ -95,16 +106,20 @@ object LoungeObjects {
     implicit val deduplicateFormats = jsonFormat1(Deduplicate.apply)
   }
 
+  object Publish extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val publishFormats = jsonFormat1(Publish.apply)
+  }
+
   object Warning extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val failureFormats = jsonFormat3(Warning.apply)
   }
 
-  object Edit extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val failureFormats = jsonFormat2(Edit.apply)
-  }
-
   object Failure extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val failureFormats = jsonFormat1(Failure.apply)
+  }
+
+  object Info extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val failureFormats = jsonFormat1(Info.apply)
   }
 
   object Answer extends DefaultJsonProtocol with SprayJsonSupport {
@@ -112,10 +127,10 @@ object LoungeObjects {
   }
 
   object ChangeSummary extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val changeSummaryFormats = jsonFormat3(ChangeSummary.apply)
+    implicit val changeSummaryFormats = jsonFormat4(ChangeSummary.apply)
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat6(Command.apply)
+    implicit val requestFormats = jsonFormat7(Command.apply)
   }
 }

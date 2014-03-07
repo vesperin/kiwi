@@ -54,8 +54,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
 
         val answers = List(
-          ChangeSummary(None,Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))))),None),
-          ChangeSummary(None,Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))),None)
+          ChangeSummary(warnings = Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42)))))),
+          ChangeSummary(warnings = Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))))
         )
 
         answers.contains(responseAs[ChangeSummary])
