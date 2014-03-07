@@ -53,8 +53,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
 
         val answers = List(
-          ChangeSummary(warnings = Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42)))))),
-          ChangeSummary(warnings = Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))))
+          ChangeSummary(warnings = Some(List(Warning("object", "Unused parameter", Some(List(29, 42))), Warning("inject", "Unused method", Some(List(17, 45)))))),
+          ChangeSummary(warnings = Some(List(Warning("inject", "Unused method", Some(List(17, 45))), Warning("object", "Unused parameter", Some(List(29, 42))))))
         )
 
         answers.contains(responseAs[ChangeSummary])
@@ -65,12 +65,12 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/api/try?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
 
-          val answers = List(
-            ChangeSummary(warnings = Some(List(Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))), Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42)))))),
-            ChangeSummary(warnings = Some(List(Warning("Unused parameter","Vesper has detected unused parameters in one or more methods",Some(List(29, 42))), Warning("Unused method","Vesper has detected one or more unused methods!",Some(List(17, 45))))))
-          )
+        val answers = List(
+          ChangeSummary(warnings = Some(List(Warning("object", "Unused parameter", Some(List(29, 42))), Warning("inject", "Unused method", Some(List(17, 45)))))),
+          ChangeSummary(warnings = Some(List(Warning("inject", "Unused method", Some(List(17, 45))), Warning("object", "Unused parameter", Some(List(29, 42))))))
+        )
 
-          answers.contains(responseAs[ChangeSummary])
+        answers.contains(responseAs[ChangeSummary])
       }
     }
 

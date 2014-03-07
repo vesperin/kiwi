@@ -6,7 +6,7 @@ import scala.collection.mutable
 import edu.ucsc.refactor.util.{Locations, Commit}
 import edu.ucsc.refactor.spi.{CommitSummary, Refactoring, Name}
 import java.util.Date
-import org.eclipse.jdt.core.dom.{MethodDeclaration, ASTNode}
+import org.eclipse.jdt.core.dom.{VariableDeclaration, SimpleName, MethodDeclaration, ASTNode}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -102,11 +102,12 @@ trait VesperConversions {
     val nodes:java.util.List[ASTNode]     = each.getAffectedNodes
     val nitr:java.util.Iterator[ASTNode]  = nodes.iterator()
 
-
+    var names: mutable.Buffer[String] = mutable.Buffer.empty[String]
     while(nitr.hasNext){
       val node: ASTNode = nitr.next
       if(nodes.size() > 1){
         if(!node.isInstanceOf[MethodDeclaration]){
+          names += getSimpleName(node)
           val loc: Location = Locations.locate(source, node)
           marks += loc.getStart.getOffset
           marks += loc.getEnd.getOffset
@@ -115,14 +116,27 @@ trait VesperConversions {
         val loc: Location = Locations.locate(source, node)
         marks += loc.getStart.getOffset
         marks += loc.getEnd.getOffset
+        names += getSimpleName(node)
       }
     }
 
     Warning(
+      names.mkString(","),
       each.getName.getKey,
-      each.getName.getSummary,
       Some(marks.toList)
     )
 
+  }
+
+  private def getSimpleName(astNode: ASTNode): String = {
+    astNode match {
+      case method: MethodDeclaration =>
+        method.getName.getIdentifier
+      case simpleName: SimpleName =>
+        simpleName.getIdentifier
+      case declaration: VariableDeclaration =>
+        declaration.getName.getIdentifier
+      case _ => "UNKNOWN"
+    }
   }
 }
