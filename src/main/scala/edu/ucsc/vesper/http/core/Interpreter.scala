@@ -14,9 +14,9 @@ import edu.ucsc.vesper.http.domain.LoungeObjects.Role
 import scala.collection.JavaConversions._
 
 /**
- * Message object for a request to inspect a source code.
+ * Message object for a request to evaluate some command against a source code.
  */
-case class Perform(who:Auth, command:Command)
+case class Eval(who:Auth, command:Command)
 /**
  * Message object for a question for Vesper.
  */
@@ -260,8 +260,8 @@ trait Interpreter extends Configuration with VesperConversions {
 
 class InterpreterActor extends Actor with Interpreter {
   override def receive = {
-    case Get(who, question)     => sender ! ask(who, question)
-    case Perform(who, command)  => sender ! eval(who, command)
+    case Get(who, question)  => sender ! ask(who, question)
+    case Eval(who, command)  => sender ! eval(who, command)
     case _=> None
   }
 }
