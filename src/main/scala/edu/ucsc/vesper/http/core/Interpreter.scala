@@ -16,7 +16,7 @@ import scala.collection.JavaConversions._
 /**
  * Message object for a request to inspect a source code.
  */
-case class Curate(who:Auth, command:Command)
+case class Perform(who:Auth, command:Command)
 /**
  * Message object for a question for Vesper.
  */
@@ -260,8 +260,8 @@ trait Interpreter extends Configuration with VesperConversions {
 
 class InterpreterActor extends Actor with Interpreter {
   override def receive = {
-    case Get(who, question)   => sender ! ask(who, question)
-    case Curate(who, command) => sender ! eval(who, command)
+    case Get(who, question)     => sender ! ask(who, question)
+    case Perform(who, command)  => sender ! eval(who, command)
     case _=> None
   }
 }

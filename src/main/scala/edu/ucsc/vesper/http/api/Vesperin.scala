@@ -49,7 +49,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
           authorize(isCurator(membership)){
             entity(as[Command]) {
               command =>
-                complete((backend ? Curate(membership.auth, command)).mapTo[Option[ChangeSummary]])
+                complete((backend ? Perform(membership.auth, command)).mapTo[Option[ChangeSummary]])
             }
           }
         }
