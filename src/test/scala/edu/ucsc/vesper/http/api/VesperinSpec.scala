@@ -2,7 +2,7 @@ package edu.ucsc.vesper.http.api
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
-import spray.http.{HttpEntity, MediaTypes}
+import spray.http.{StatusCodes, HttpEntity, MediaTypes}
 import edu.ucsc.vesper.http.domain.LoungeObjects._
 import scala.concurrent.duration._
 import spray.http.HttpHeaders.RawHeader
@@ -157,6 +157,22 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
         responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
       }
+    }
+
+    "come back with a custom unauthorized request message" in {
+      Get("/api/search?q=curators") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+        status === StatusCodes.OK
+        responseAs[Answer].items(0) === "You are not authorized to see these resources."
+      }
+    }
+
+    "come back with a 401 unauthorized request message" in {
+      Put("/api/try", Command(deduplicate = Some(Deduplicate(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
+        addHeader(RawHeader("x-auth-token", "mal")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        status === StatusCodes.Unauthorized
+      }
+
     }
   }
 
