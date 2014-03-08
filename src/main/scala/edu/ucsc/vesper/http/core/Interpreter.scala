@@ -172,7 +172,7 @@ trait Interpreter extends Configuration with VesperConversions {
 
     if(commit != null){
       if(commit.isValidCommit){
-        result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+        result = Some(ChangeSummary(draft = Some(asFormattedDraft(commit))))
       }
     }
 

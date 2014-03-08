@@ -3,7 +3,7 @@ package edu.ucsc.vesper.http.core
 import edu.ucsc.refactor.{Location, Issue, Note, Source}
 import edu.ucsc.vesper.http.domain.LoungeObjects.{Warning, Draft, Comment, Code}
 import scala.collection.mutable
-import edu.ucsc.refactor.util.{Locations, Commit}
+import edu.ucsc.refactor.util.{SourceFormatter, Locations, Commit}
 import edu.ucsc.refactor.spi.{CommitSummary, Refactoring, Name}
 import java.util.Date
 import org.eclipse.jdt.core.dom.{VariableDeclaration, SimpleName, MethodDeclaration, ASTNode}
@@ -65,6 +65,19 @@ trait VesperConversions {
     }
 
     result
+  }
+
+  def asFormattedDraft(commit: Commit): Draft = {
+    val src: Source               = commit.getSourceAfterChange
+    val formattedContent: String  = new SourceFormatter().format(src.getContents)
+
+    Draft(
+      commit.getNameOfChange.getKey,
+      simplePast(commit.getNameOfChange.getKey),
+      commit.getTimestamp,
+      asCode(commit.getSourceBeforeChange),
+      asCode(Source.from(src, formattedContent))
+    )
   }
 
   def asDraft(commit: Commit): Draft = {

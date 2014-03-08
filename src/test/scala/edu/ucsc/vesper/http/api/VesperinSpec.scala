@@ -126,6 +126,22 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         responseAs[ChangeSummary].draft.get.after  ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
       }
     }
+
+    "return a formatting request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(format = Some(Format(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
+        responseAs[ChangeSummary].draft.get.after  === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {\n\tvoid inject(Object object) {\n\t}\n}",None)
+      }
+    }
+
+    "return a formatting request in JSON form for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"format": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
+        responseAs[ChangeSummary].draft.get.after  === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {\n\tvoid inject(Object object) {\n\t}\n}",None)
+      }
+    }
   }
 
 }
