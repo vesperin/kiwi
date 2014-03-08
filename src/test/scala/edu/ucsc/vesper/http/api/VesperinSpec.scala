@@ -75,7 +75,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
 
-    "return a rename request for POST requests to the root path" in {
+    "return a rename class request for POST requests to the root path" in {
       Post("/api/try?auth_token=legolas", Command(rename = Some(Rename("class", where =  List(6, 15), to = "Preconditions", source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[ChangeSummary].draft.get.before ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
@@ -84,7 +84,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
 
-    "return a rename request in JSON form for POST requests to the root path" in {
+    "return a rename class request in JSON form for POST requests to the root path" in {
       Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"rename": { "what": "class", "where":[6, 15], "to": "Preconditions", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
@@ -92,6 +92,22 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         responseAs[ChangeSummary].draft.get.before ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
         responseAs[ChangeSummary].draft.get.after  ===  Code(None,"Preconditions.java","Resource Injector",None,"class Preconditions { void inject(Object object) { } }",None)
 
+      }
+    }
+
+    "return a remove method request in JSON form for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"remove": { "what": "method", "where":[17, 45], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
+        responseAs[ChangeSummary].draft.get.after  ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap { }",None)
+      }
+    }
+
+    "return a remove method request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(remove = Some(Remove("method", where =  List(17, 45), source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
+        responseAs[ChangeSummary].draft.get.after  ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap { }",None)
       }
     }
 
