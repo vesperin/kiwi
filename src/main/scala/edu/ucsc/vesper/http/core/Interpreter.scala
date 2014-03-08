@@ -105,11 +105,10 @@ trait Interpreter extends Configuration with VesperConversions {
 
   private def createRenameChangeRequest(what: String, name: String, selection: SourceSelection): ChangeRequest = {
     what match {
-      case "class"      => ChangeRequest.deleteClass(selection)
-      case "method"     => ChangeRequest.deleteMethod(selection)
-      case "field"      => ChangeRequest.deleteField(selection)
-      case "parameter"  => ChangeRequest.deleteParameter(selection)
-      case "region"     => ChangeRequest.deleteRegion(selection)
+      case "class"      => ChangeRequest.renameClassOrInterface(selection, name)
+      case "method"     => ChangeRequest.renameMethod(selection, name)
+      case "field"      => ChangeRequest.renameField(selection, name)
+      case "parameter"  => ChangeRequest.renameParameter(selection, name)
       case _=> throw new NoSuchElementException(what + " was not found")
     }
   }

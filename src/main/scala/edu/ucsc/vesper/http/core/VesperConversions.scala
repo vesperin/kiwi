@@ -16,7 +16,7 @@ trait VesperConversions {
     val sourceId: Option[String]  = if (source.getId != null) Some(source.getId) else None
     val sourceName: String        = source.getName
     val sourceDesc: String        = source.getDescription
-    val sourceCont: String        = source.getContents
+    val sourceCont: String        = source.getContents.replaceAll("\n", " ").replaceAll(" \t", " ").replaceAll("\t\t", "\t")
 
     val srcComments: Option[List[Comment]] = if(source.getNotes.isEmpty) None else {
       val itr: java.util.Iterator[Note] = source.getNotes.iterator
