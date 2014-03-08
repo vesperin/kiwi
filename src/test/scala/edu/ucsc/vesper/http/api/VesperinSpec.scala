@@ -2,7 +2,7 @@ package edu.ucsc.vesper.http.api
 
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
-import spray.http.{MediaTypes, HttpEntity}
+import spray.http.{HttpEntity, MediaTypes}
 import edu.ucsc.vesper.http.domain.LoungeObjects._
 import scala.concurrent.duration._
 import spray.http.HttpHeaders.RawHeader
@@ -140,6 +140,22 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
         responseAs[ChangeSummary].draft.get.before === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
         responseAs[ChangeSummary].draft.get.after  === Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {\n\tvoid inject(Object object) {\n\t}\n}",None)
+      }
+    }
+
+    "return a formatting request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(deduplicate = Some(Deduplicate(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
+        responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
+      }
+    }
+
+    "return a formatting request in JSON form for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"} }}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
+        responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
       }
     }
   }
