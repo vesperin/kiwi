@@ -70,7 +70,7 @@ trait VesperConversions {
   def asDraft(commit: Commit): Draft = {
     Draft(
       commit.getNameOfChange.getKey,
-      commit.getNameOfChange.getSummary,
+      simplePast(commit.getNameOfChange.getKey),
       commit.getTimestamp,
       asCode(commit.getSourceBeforeChange),
       asCode(commit.getSourceAfterChange)
@@ -138,5 +138,28 @@ trait VesperConversions {
         declaration.getName.getIdentifier
       case _ => "UNKNOWN"
     }
+  }
+
+
+  private def simplePast(text: String): String = text match {
+    case "Deduplicate"            => "Deduplicated code"
+    case "Duplicate code"         => "Deduplicated code"
+    case "Unformatted code"       => "Reformatted code"
+    case "Reformat Code"          => "Reformatted code"
+    case "Delete Type"            => "Removed unused type"
+    case "Unused type"            => "Removed unused type"
+    case "Delete Method"          => "Removed unused method"
+    case "Unused method"          => "Removed unused method"
+    case "Delete Parameter"       => "Removed unused parameter"
+    case "Unused parameter"       => "Removed unused parameter"
+    case "Delete Field"           => "Removed unused field"
+    case "Unused field"           => "Removed unused field"
+    case "Magic Number"           => "Removed unused magic number"
+    case "Delete Region"          => "Removed code region"
+    case "Delete Unused Imports"  => "Removed unused imports"
+    case "Rename Method"          => "Renamed method"
+    case "Rename Parameter"       => "Renamed parameter"
+    case "Rename field"           => "Renamed field"
+    case "Rename Type"            => "Renamed type"
   }
 }
