@@ -1,3 +1,7 @@
+import com.typesafe.sbt.SbtStartScript
+
+seq(SbtStartScript.startScriptForClassesSettings: _*)
+
 name 			:= "vesper-http"
 
 organization  	:= "com.vesperin"
@@ -27,9 +31,7 @@ libraryDependencies ++= {
     "io.spray"            %   "spray-testkit"    % sprayVersion  % "test",
     "com.typesafe.akka"   %%  "akka-actor"       % akkaVersion,
     "com.typesafe.akka"   %%  "akka-testkit"     % akkaVersion   % "test",
-    "org.specs2"          %%  "specs2-core"      % "2.3.7" % "test",
-	"com.typesafe.slick"  %%  "slick" 			 % "1.0.1",
-	"mysql" 			  %   "mysql-connector-java" % "5.1.25"
+    "org.specs2"          %%  "specs2-core"      % "2.3.7" % "test"
   )
 }
 
