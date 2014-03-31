@@ -84,6 +84,15 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
 
+    "return a rename member request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(rename = Some(Rename("member", where =  List(6, 15), to = "Preconditions", source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before ===  Code(None,"Bootstrap.java","Resource Injector",None,"class Bootstrap {void inject(Object object){}}",None)
+        responseAs[ChangeSummary].draft.get.after  ===  Code(None,"Preconditions.java","Resource Injector",None,"class Preconditions {\n\tvoid inject(Object object) {\n\t}\n}",None)
+      }
+    }
+
+
     "return a rename class request in JSON form for POST requests to the root path" in {
       Post("/api/try?c", HttpEntity(MediaTypes.`application/json`, """{"rename": { "what": "class", "where":[6, 15], "to": "Preconditions", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}"} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>

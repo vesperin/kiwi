@@ -109,6 +109,7 @@ trait Interpreter extends Configuration with VesperConversions {
       case "method"     => ChangeRequest.renameMethod(selection, name)
       case "field"      => ChangeRequest.renameField(selection, name)
       case "parameter"  => ChangeRequest.renameParameter(selection, name)
+      case "member"     => ChangeRequest.renameSelectedMember(selection, name)
       case _=> throw new NoSuchElementException(what + " was not found")
     }
   }
