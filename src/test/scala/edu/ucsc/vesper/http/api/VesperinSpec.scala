@@ -152,7 +152,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
-    "return a formatting request for POST requests to the root path" in {
+    "return a deduplicate request for POST requests to the root path" in {
       Post("/api/try?auth_token=legolas", Command(deduplicate = Some(Deduplicate(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
@@ -160,11 +160,28 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
-    "return a formatting request in JSON form for POST requests to the root path" in {
+    "return a deduplicate request in JSON form for POST requests to the root path" in {
       Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
         responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
+      }
+    }
+
+
+    "return a cleanup request for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
+        responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n" + "\t/** {@link Name#boom(String)} **/\n" + "\tvoid boom() {\n" + "\t\tSystem.out.println(1);\n" + "\t}\n" + "\n" + "\tvoid buum() {\n" + "\t\tboom();\n" + "\t}\n" + "}")
+      }
+    }
+
+    "return a cleanup request in JSON form for POST requests to the root path" in {
+      Post("/api/try?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"} }}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[ChangeSummary].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
+        responseAs[ChangeSummary].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n" + "\t/** {@link Name#boom(String)} **/\n" + "\tvoid boom() {\n" + "\t\tSystem.out.println(1);\n" + "\t}\n" + "\n" + "\tvoid buum() {\n" + "\t\tboom();\n" + "\t}\n" + "}")
       }
     }
 

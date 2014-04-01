@@ -180,6 +180,80 @@ trait Interpreter extends Configuration with VesperConversions {
     result
   }
 
+  private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Option[ChangeSummary] = {
+    var result: Option[ChangeSummary] = None
+
+    val vesperSource: Source        = asSource(cleanup.source)
+    val queue:mutable.Queue[Source] = new mutable.Queue[Source]
+
+    queue += vesperSource
+
+
+    def createCommit(refactorer: Refactorer, issue: Issue): Commit = {
+      val change: Change = refactorer.createChange(ChangeRequest.forIssue(issue))
+      val commit: Commit = refactorer.apply(change)
+
+      commit
+    }
+
+
+    val stack:mutable.Stack[Commit] = new mutable.Stack[Commit]
+
+    while(!queue.isEmpty){
+      val code: Source = queue.dequeue()
+      val issues:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(code))
+
+      for(i <- issues){
+        val name: Smell = i.getName
+        if (Names.hasAvailableResponse(name)) { // the assumption is there is ONE instance of DEDUPLICATE issue
+          if (Names.from(i.getName).isSame(Refactoring.DEDUPLICATE) && queue.isEmpty) {
+
+            val commit: Commit = createCommit(refactorer, i)
+
+            if(commit != null){
+              if(commit.isValidCommit){
+
+                stack.push(commit)
+
+                queue   += commit.getSourceAfterChange
+              }
+            }
+          } else if(Names.from(i.getName).isSame(Refactoring.DELETE_UNUSED_IMPORTS) && queue.isEmpty){
+
+            val commit: Commit = createCommit(refactorer, i)
+
+            if(commit != null){
+              if(commit.isValidCommit){
+
+                stack.push(commit)
+
+                queue += commit.getSourceAfterChange
+              }
+            }
+          }
+        }
+      }
+
+    }
+
+
+    result = if (!stack.isEmpty) {
+      Some(
+        ChangeSummary(
+          draft = Some(
+            asFormattedDraft(
+              stack.pop(),
+              cause       = "Full cleanup",
+              description = "Reformatted code and also removed code redundancies"
+            )
+          )
+        )
+      )
+    } else result
+
+    result
+  }
+
   private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Option[ChangeSummary] = {
     var result: Option[ChangeSummary] = None
 
@@ -239,6 +313,7 @@ trait Interpreter extends Configuration with VesperConversions {
       command.optimize,
       command.format,
       command.deduplicate,
+      command.cleanup,
       command.publish
     ).flatten
 
@@ -251,6 +326,7 @@ trait Interpreter extends Configuration with VesperConversions {
       case optimize:Optimize        => return evalOptimize(environment, optimize)
       case format:Format            => return evalFormat(environment, format)
       case deduplicate:Deduplicate  => return evalDeduplicate(environment, deduplicate)
+      case cleanup:Cleanup          => return evalCleanup(environment, cleanup)
       case publish:Publish          => return evalPublish(who, publish)
     }
 

@@ -41,6 +41,8 @@ object LoungeObjects {
   case class Format(source: Code)
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Deduplicate(source: Code)
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
+  case class Cleanup(source: Code)
   // drafts' sources
   case class Publish(drafts: List[Draft])
 
@@ -66,6 +68,7 @@ object LoungeObjects {
         optimize: Option[Optimize]        = None,
         format: Option[Format]            = None,
         deduplicate: Option[Deduplicate]  = None,
+        cleanup: Option[Cleanup]          = None,
         publish: Option[Publish]          = None
   )
 
@@ -106,6 +109,10 @@ object LoungeObjects {
     implicit val deduplicateFormats = jsonFormat1(Deduplicate.apply)
   }
 
+  object Cleanup extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val cleanupFormats = jsonFormat1(Cleanup.apply)
+  }
+
   object Publish extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val publishFormats = jsonFormat1(Publish.apply)
   }
@@ -131,6 +138,6 @@ object LoungeObjects {
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat7(Command.apply)
+    implicit val requestFormats = jsonFormat8(Command.apply)
   }
 }

@@ -67,16 +67,25 @@ trait VesperConversions {
     result
   }
 
-  def asFormattedDraft(commit: Commit): Draft = {
+
+  def asFormattedDraft(commit: Commit, cause: String, description: String): Draft = {
     val src: Source               = commit.getSourceAfterChange
     val formattedContent: String  = new SourceFormatter().format(src.getContents)
 
     Draft(
-      commit.getNameOfChange.getKey,
-      simplePast(commit.getNameOfChange.getKey),
+      cause,
+      description,
       commit.getTimestamp,
       asCode(commit.getSourceBeforeChange),
       asCode(Source.from(src, formattedContent))
+    )
+  }
+
+  def asFormattedDraft(commit: Commit): Draft = {
+    asFormattedDraft(
+      commit,
+      commit.getNameOfChange.getKey,
+      simplePast(commit.getNameOfChange.getKey)
     )
   }
 
