@@ -249,7 +249,30 @@ trait Interpreter extends Configuration with VesperConversions {
           )
         )
       )
-    } else result
+    } else {  // at least format the code
+      val request:ChangeRequest   = ChangeRequest.reformatSource(vesperSource)
+      val change: Change          = refactorer.createChange(request)
+      val commit: Commit          = refactorer.apply(change)
+
+      var reformatResult: Option[ChangeSummary] = None
+      if(commit != null){
+        if(commit.isValidCommit){
+          reformatResult = Some(
+            ChangeSummary(
+              draft = Some(
+                asFormattedDraft(
+                  commit,
+                  cause       = "Full cleanup",
+                  description = "Reformatted code and also removed code redundancies"
+                )
+              )
+            )
+          )
+        }
+      }
+
+      reformatResult
+    }
 
     result
   }
