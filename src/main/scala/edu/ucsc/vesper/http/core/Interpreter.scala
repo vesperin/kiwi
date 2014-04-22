@@ -55,7 +55,15 @@ trait Interpreter extends Configuration with VesperConversions {
         warnings += asWarning(vesperSource, i)
       }
 
-      Some(ChangeSummary(warnings = Some(warnings.toList)))
+      val result = if(!warnings.isEmpty){
+        Some(ChangeSummary(warnings = Some(warnings.toList)))
+      } else {
+        var messages:mutable.Buffer[String]  = mutable.Buffer.empty[String]
+        messages += "It looks clear!"
+        Some(ChangeSummary(info = Some(Info(messages.toList))))
+      }
+
+      result
     } catch {
       case e: Throwable =>
         Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
