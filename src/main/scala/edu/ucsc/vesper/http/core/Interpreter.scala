@@ -65,7 +65,7 @@ trait Interpreter extends Configuration with VesperConversions {
 
       result
     } catch {
-      case e: Throwable =>
+      case e: Exception =>
         Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
@@ -97,7 +97,7 @@ trait Interpreter extends Configuration with VesperConversions {
         }
       }
     } catch {
-      case e: Throwable => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+      case e: Exception => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
     result
@@ -137,7 +137,7 @@ trait Interpreter extends Configuration with VesperConversions {
         }
       }
     } catch {
-      case e: Throwable => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+      case e: Exception => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
 
     result
@@ -361,7 +361,7 @@ trait Interpreter extends Configuration with VesperConversions {
       case publish:Publish          => return evalPublish(who, publish)
     }
 
-    None
+    Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))
   }
 }
 
@@ -369,6 +369,6 @@ class InterpreterActor extends Actor with Interpreter {
   override def receive = {
     case Get(who, question)  => sender ! ask(who, question)
     case Eval(who, command)  => sender ! eval(who, command)
-    case _=> None
+    case _=> Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))
   }
 }
