@@ -97,7 +97,9 @@ trait Interpreter extends Configuration with VesperConversions {
         }
       }
     } catch {
-      case e: Exception => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+      case e: Exception => {
+        return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+      }
     }
 
     result

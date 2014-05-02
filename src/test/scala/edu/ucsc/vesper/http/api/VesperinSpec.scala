@@ -121,13 +121,13 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a remove region request for POST requests to the root path (Web Example)" in {
-      Post("/api/try?auth_token=legolas", Command(remove = Some(Remove("region", where =  List(44, 62), source = Code(name = "BubbleSort.java", description = "BubbleSort", content = "class BubbleSort {\n" +
+      Post("/api/try?auth_token=legolas", Command(remove = Some(Remove("region", where =  List(68, 117), source = Code(name = "BubbleSort.java", description = "BubbleSort", content = "class BubbleSort {\n" +
         "\tpublic static void main(String[] arguments) {\n" +
+        "\t\tint[] arr = { 12, 23, 43, 34, 3, 6, 7, 1, 9, 6 };\n" +
         "\t}\n" +
         "}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
-        println(responseAs[ChangeSummary].draft.get)
-        responseAs[ChangeSummary].draft.get.after === Code(None,"BubbleSort.java","BubbleSort",None,"class BubbleSort {\n\tpublic static void main() {\n\t}\n}",None)
+        responseAs[ChangeSummary].draft.get.after === Code(None,"BubbleSort.java","BubbleSort",None,"class BubbleSort {\n\tpublic static void main(String[] arguments) {\n\t}\n}",None)
       }
     }
 

@@ -183,5 +183,7 @@ trait VesperConversions {
     case "Rename Parameter"       => "Renamed parameter"
     case "Rename field"           => "Renamed field"
     case "Rename Type"            => "Renamed type"
+    case "Rename variable"        => "Renamed local variable"
+    case "Delete variable"        => "Removed local variable"
   }
 }
