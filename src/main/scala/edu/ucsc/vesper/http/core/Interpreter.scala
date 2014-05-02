@@ -97,9 +97,8 @@ trait Interpreter extends Configuration with VesperConversions {
       }
 
     } catch {
-      case e: Exception => {
+      case e: Exception =>
         return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
-      }
     }
 
     result
@@ -265,7 +264,7 @@ trait Interpreter extends Configuration with VesperConversions {
       var reformatResult: Option[ChangeSummary] = None
 
       commit != null && commit.isValidCommit match {
-        case true =>  {
+        case true =>
           reformatResult = Some(
             ChangeSummary(
               draft = Some(
@@ -277,7 +276,6 @@ trait Interpreter extends Configuration with VesperConversions {
               )
             )
           )
-        }
         case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
 
