@@ -91,11 +91,11 @@ trait Interpreter extends Configuration with VesperConversions {
       val change: Change          = refactorer.createChange(request)
       val commit: Commit          = refactorer.apply(change)
 
-      if(commit != null){
-        if(commit.isValidCommit){
-          result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-        }
+      commit != null && commit.isValidCommit match {
+        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
+
     } catch {
       case e: Exception => {
         return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
@@ -133,11 +133,11 @@ trait Interpreter extends Configuration with VesperConversions {
       val change: Change          = refactorer.createChange(request)
       val commit: Commit          = refactorer.apply(change)
 
-      if(commit != null){
-        if(commit.isValidCommit){
-          result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-        }
+      commit != null && commit.isValidCommit match {
+        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
+
     } catch {
       case e: Exception => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
@@ -163,10 +163,9 @@ trait Interpreter extends Configuration with VesperConversions {
     val change: Change          = refactorer.createChange(request)
     val commit: Commit          = refactorer.apply(change)
 
-    if(commit != null){
-      if(commit.isValidCommit){
-        result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-      }
+    commit != null && commit.isValidCommit match {
+      case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+      case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
     }
 
     result
@@ -181,10 +180,9 @@ trait Interpreter extends Configuration with VesperConversions {
     val change: Change          = refactorer.createChange(request)
     val commit: Commit          = refactorer.apply(change)
 
-    if(commit != null){
-      if(commit.isValidCommit){
-        result = Some(ChangeSummary(draft = Some(asFormattedDraft(commit))))
-      }
+    commit != null && commit.isValidCommit match {
+      case true =>  result = Some(ChangeSummary(draft = Some(asFormattedDraft(commit))))
+      case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
     }
 
     result
@@ -265,8 +263,9 @@ trait Interpreter extends Configuration with VesperConversions {
       val commit: Commit          = refactorer.apply(change)
 
       var reformatResult: Option[ChangeSummary] = None
-      if(commit != null){
-        if(commit.isValidCommit){
+
+      commit != null && commit.isValidCommit match {
+        case true =>  {
           reformatResult = Some(
             ChangeSummary(
               draft = Some(
@@ -279,6 +278,7 @@ trait Interpreter extends Configuration with VesperConversions {
             )
           )
         }
+        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
 
       reformatResult
@@ -300,10 +300,9 @@ trait Interpreter extends Configuration with VesperConversions {
           val change: Change = refactorer.createChange(ChangeRequest.forIssue(i))
           val commit: Commit = refactorer.apply(change)
 
-          if(commit != null){
-            if(commit.isValidCommit){
-              result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-            }
+          commit != null && commit.isValidCommit match {
+            case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+            case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
           }
         }
       }
@@ -314,25 +313,32 @@ trait Interpreter extends Configuration with VesperConversions {
 
 
   private def evalPublish(who:Auth, publish: Publish): Option[ChangeSummary] = {
-    val commitHistory: CommitHistory = new CommitHistory()
+    try {
 
-    for(d <- publish.drafts){
-      commitHistory.add(asCommit(who.userId, d))
+      val commitHistory: CommitHistory = new CommitHistory()
+
+      for(d <- publish.drafts){
+        commitHistory.add(asCommit(who.userId, d))
+      }
+
+      val p: CommitPublisher = new CommitPublisher(
+        commitHistory,
+        new Credential(who.userId, who.token)
+      )
+
+      var result: Option[ChangeSummary]   = None
+      val commits:mutable.Buffer[Commit]  = asScalaBuffer(p.publish())
+      val commit: Commit                  = commits.last
+
+      commit != null && commit.isValidCommit match {
+        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
+        case false => result = Some(ChangeSummary(failure = Some(Failure("Unable to publish commit"))))
+      }
+
+      result
+    } catch {
+      case e: Exception => Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
     }
-
-    val p: CommitPublisher = new CommitPublisher(
-      commitHistory,
-      new Credential(who.userId, who.token)
-    )
-
-    val commits:mutable.Buffer[Commit]  = asScalaBuffer(p.publish())
-    val commit: Commit                  = commits.last
-
-    if(commit == null || !commit.isValidCommit) {
-      return Some(ChangeSummary(failure = Some(Failure(""))))
-    }
-
-    Some(ChangeSummary(draft = Some(asDraft(commit))))
   }
 
   def eval(who:Auth, command: Command): Option[ChangeSummary] = {
