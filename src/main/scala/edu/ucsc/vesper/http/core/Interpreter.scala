@@ -2,7 +2,6 @@ package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
 import edu.ucsc.vesper.http.config.Configuration
-import akka.actor.Actor
 import edu.ucsc.vesper.http.domain.LoungeObjects._
 import spray.http.DateTime
 import scala.collection.mutable
@@ -12,34 +11,29 @@ import scala.Some
 import edu.ucsc.vesper.http.domain.LoungeObjects.Auth
 import edu.ucsc.vesper.http.domain.LoungeObjects.Role
 import scala.collection.JavaConversions._
-
-/**
- * Message object for a request to evaluate some command against a source code.
- */
-case class Eval(who:Auth, command:Command)
-/**
- * Message object for a question for Vesper.
- */
-case class Get(who:Role, question: String)
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 trait Interpreter extends Configuration with VesperConversions {
+
+  implicit def executionContext = ExecutionContext.Implicits.global
+
   val Curator     = 0
   val Reviewer    = 1
 
-  def ask(who:Role, question:String): Option[Answer] = {
+  def ask(who:Role, question:String): Future[Option[Answer]] = {
 
     def f(x: Int): Boolean = if(x == Reviewer) true else false
     def g(x: Int): Boolean = if(x == Curator)  true else false
 
-    if(who.id != Curator) return Some(Answer(List("You are not authorized to see these resources.")))
+    if(who.id != Curator) return Future{Some(Answer(List("You are not authorized to see these resources.")))}
 
     question  match {
-      case "curators"   => Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList))
-      case "reviewers"  => Some(Answer(club.filter {case (k,v) => f(v)}.keySet.toList))
-      case "everybody"  => Some(Answer(passwords.keySet.toList))
+      case "curators"   => Future{Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList))}
+      case "reviewers"  => Future{Some(Answer(club.filter {case (k,v) => f(v)}.keySet.toList))}
+      case "everybody"  => Future{Some(Answer(passwords.keySet.toList))}
     }
   }
 
@@ -339,7 +333,7 @@ trait Interpreter extends Configuration with VesperConversions {
     }
   }
 
-  def eval(who:Auth, command: Command): Option[ChangeSummary] = {
+  def eval(who:Auth, command: Command): Future[Option[ChangeSummary]] = {
 
     val environment: Refactorer = Vesper.createRefactorer()
 
@@ -357,24 +351,20 @@ trait Interpreter extends Configuration with VesperConversions {
     println(who.userId + " is curating at " + DateTime.now + "\n")
 
     answer(0) match {
-      case inspect:Inspect          => return evalInspect(environment, inspect)
-      case remove:Remove            => return evalRemove(environment, remove)
-      case rename:Rename            => return evalRename(environment, rename)
-      case optimize:Optimize        => return evalOptimize(environment, optimize)
-      case format:Format            => return evalFormat(environment, format)
-      case deduplicate:Deduplicate  => return evalDeduplicate(environment, deduplicate)
-      case cleanup:Cleanup          => return evalCleanup(environment, cleanup)
-      case publish:Publish          => return evalPublish(who, publish)
+      case inspect:Inspect          => return Future{evalInspect(environment, inspect)}
+      case remove:Remove            => return Future{evalRemove(environment, remove)}
+      case rename:Rename            => return Future{evalRename(environment, rename)}
+      case optimize:Optimize        => return Future{evalOptimize(environment, optimize)}
+      case format:Format            => return Future{evalFormat(environment, format)}
+      case deduplicate:Deduplicate  => return Future{evalDeduplicate(environment, deduplicate)}
+      case cleanup:Cleanup          => return Future{evalCleanup(environment, cleanup)}
+      case publish:Publish          => return Future{evalPublish(who, publish)}
     }
 
-    Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))
+    Future{Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))}
   }
 }
 
-class InterpreterActor extends Actor with Interpreter {
-  override def receive = {
-    case Get(who, question)  => sender ! ask(who, question)
-    case Eval(who, command)  => sender ! eval(who, command)
-    case _=> Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))
-  }
-}
+
+case class VesperInterpreter() extends Interpreter
+
