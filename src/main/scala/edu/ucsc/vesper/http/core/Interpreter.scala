@@ -351,17 +351,16 @@ trait Interpreter extends Configuration with VesperConversions {
     println(who.userId + " is curating at " + DateTime.now + "\n")
 
     answer(0) match {
-      case inspect:Inspect          => return Future{evalInspect(environment, inspect)}
-      case remove:Remove            => return Future{evalRemove(environment, remove)}
-      case rename:Rename            => return Future{evalRename(environment, rename)}
-      case optimize:Optimize        => return Future{evalOptimize(environment, optimize)}
-      case format:Format            => return Future{evalFormat(environment, format)}
-      case deduplicate:Deduplicate  => return Future{evalDeduplicate(environment, deduplicate)}
-      case cleanup:Cleanup          => return Future{evalCleanup(environment, cleanup)}
-      case publish:Publish          => return Future{evalPublish(who, publish)}
+      case inspect:Inspect          => Future{evalInspect(environment, inspect)}
+      case remove:Remove            => Future{evalRemove(environment, remove)}
+      case rename:Rename            => Future{evalRename(environment, rename)}
+      case optimize:Optimize        => Future{evalOptimize(environment, optimize)}
+      case format:Format            => Future{evalFormat(environment, format)}
+      case deduplicate:Deduplicate  => Future{evalDeduplicate(environment, deduplicate)}
+      case cleanup:Cleanup          => Future{evalCleanup(environment, cleanup)}
+      case publish:Publish          => Future{evalPublish(who, publish)}
+      case _                        => Future{Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))}
     }
-
-    Future{Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))}
   }
 }
 
