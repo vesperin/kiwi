@@ -1,7 +1,7 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor.{Location, Issue, Note, Source}
-import edu.ucsc.vesper.http.domain.LoungeObjects.{Warning, Draft, Comment, Code}
+import edu.ucsc.vesper.http.domain.Models.{Warning, Draft, Comment, Code}
 import scala.collection.mutable
 import edu.ucsc.refactor.util.{SourceFormatter, Locations, Commit}
 import edu.ucsc.refactor.spi.{CommitSummary, Refactoring, Name}
@@ -18,30 +18,43 @@ trait VesperConversions {
     val sourceDesc: String        = source.getDescription
     val sourceCont: String        = source.getContents
 
-    val srcComments: Option[List[Comment]] = if(source.getNotes.isEmpty) None else {
+    val srcComments: List[Comment] = if(source.getNotes.isEmpty) List() else {
       val itr: java.util.Iterator[Note] = source.getNotes.iterator
 
       var allComments:mutable.Buffer[Comment] = mutable.Buffer.empty[Comment]
       while(itr.hasNext){
         val each: Note = itr.next
-        val nodeId: Option[String]    = if(each.getId == null) None else Some(each.getId)
-        val username: Option[String]  = if(each.getUser == null) None else Some(each.getUser)
-        val mark:Option[List[Int]]    = if(each.getMark == null) None else {
-          Some(List(each.getMark.getStart.getOffset, each.getMark.getEnd.getOffset))
+        val isMarkEmpty: Boolean  = each.getMark == null
+
+        val from: String = if(isMarkEmpty) "0;0;0" else {
+          val line: Int = each.getMark.getStart.getLine
+          val col: Int  = each.getMark.getStart.getColumn
+          val off: Int  = each.getMark.getStart.getOffset
+
+          "%d;%d;%d".format(line, col, off)
         }
 
-        allComments += Comment(nodeId, username, each.getContent, mark)
+        val to: String = if(isMarkEmpty) "0;0;0" else {
+          val line: Int = each.getMark.getEnd.getLine
+          val col: Int  = each.getMark.getEnd.getColumn
+          val off: Int  = each.getMark.getEnd.getOffset
+
+          "%d;%d;%d".format(line, col, off)
+        }
+
+        allComments += Comment(from, to, each.getContent)
       }
 
-      Some(allComments.toList)
+      allComments.toList
     }
 
     Code(
-      id          = sourceId,
       name        = sourceName,
       description = sourceDesc,
       content     = sourceCont,
-      comments    = srcComments
+      tags        = List(),
+      comments    = srcComments,
+      id          = sourceId
     )
   }
 
@@ -52,11 +65,11 @@ trait VesperConversions {
       result.setId(source.id.get)
     }
 
-    if(source.comments != None){
-      val list = source.comments.get
+    if(source.comments != null){
+      val list = source.comments
 
       for(c <- list){
-        val id: String        = if(c.id != None) c.id.get else null
+        val id: String        = null // no id since comments are not persisted and are just embedded into the Code schema
         val username: String  = if(c.username != None) c.username.get else null
         val eachNote: Note    = new Note(id, username, c.text)
 

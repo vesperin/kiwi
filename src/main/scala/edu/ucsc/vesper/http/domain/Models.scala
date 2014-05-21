@@ -2,30 +2,59 @@ package edu.ucsc.vesper.http.domain
 
 import spray.json.DefaultJsonProtocol
 import spray.httpx.SprayJsonSupport
+import sprest.models.{ModelCompanion, Model}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-object LoungeObjects {
+object Models {
   case class Role(id: Int, description: String)
   case class Auth(userId: String, token: String)
   case class Member(username:String, role: Int)
   case class Membership(auth: Auth, role: Role)
 
-  case class Comment(
-        id: Option[String]        = None,
-        username: Option[String]  = None,
-        text: String,
-        mark: Option[List[Int]]   = None
+  case class Comment (
+      /** location's lower bound; e.g., "line;col;offset" **/
+      from: String
+
+      /** location's upper bound; e.g., "line;col;offset" **/
+      , to: String
+
+      /** the comment's text **/
+      , text: String
+
+      /** the comment's author **/
+      , username: Option[String]  = Some("You")
   )
 
-  case class Code(
-       id: Option[String]                               = None,
-       name: String,
-       description: String,
-       version: Option[String]                          = None,
-       content: String, comments: Option[List[Comment]] = None
-  )
+  case class Code (
+      /** the name of the source code (e.g., filename) **/
+      name: String
+
+      /** a piece of text describing this source code **/
+      , description: String
+
+      /** the current version of this source code **/
+      , version: Option[String]  = None
+
+      /** the current content of this Source **/
+      , content: String
+
+      /** tags or labels categorizing this source code **/
+      , tags: List[String]       = List()
+
+      /** the url where this Source was found **/
+      , url: Option[String]      = None
+
+      /** The date when this source code was found **/
+      , birthday: Option[Long]   = None
+
+      /** comments describing this source code. **/
+      , comments: List[Comment]  = List()
+
+      /** the code unique id **/
+      , var id: Option[String]   = None
+  ) extends Model[String]
 
   case class Draft(cause: String, description: String, timestamp: Long, before: Code, after: Code)
 
@@ -45,6 +74,8 @@ object LoungeObjects {
   case class Cleanup(source: Code)
   // drafts' sources
   case class Publish(drafts: List[Draft])
+  // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
+  case class Persist(source: Code)
 
 
   case class Warning(name: String, description: String, where: Option[List[Int]])
@@ -69,7 +100,8 @@ object LoungeObjects {
         format: Option[Format]            = None,
         deduplicate: Option[Deduplicate]  = None,
         cleanup: Option[Cleanup]          = None,
-        publish: Option[Publish]          = None
+        publish: Option[Publish]          = None,
+        persist: Option[Persist]          = None
   )
 
 
@@ -77,8 +109,8 @@ object LoungeObjects {
     implicit val commentFormats = jsonFormat4(Comment.apply)
   }
 
-  object Code extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val codeFormats = jsonFormat6(Code.apply)
+  object Code extends ModelCompanion[Code, String] {
+    implicit val codeFormats = jsonFormat9(Code.apply _)
   }
 
   object Draft extends DefaultJsonProtocol with SprayJsonSupport {
@@ -117,6 +149,10 @@ object LoungeObjects {
     implicit val publishFormats = jsonFormat1(Publish.apply)
   }
 
+  object Persist extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val persistFormats = jsonFormat1(Persist.apply)
+  }
+
   object Warning extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val failureFormats = jsonFormat3(Warning.apply)
   }
@@ -138,6 +174,6 @@ object LoungeObjects {
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat8(Command.apply)
+    implicit val requestFormats = jsonFormat9(Command.apply)
   }
 }

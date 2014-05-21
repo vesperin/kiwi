@@ -2,7 +2,9 @@ package edu.ucsc.vesper.http.api
 
 import spray.routing.HttpService
 import edu.ucsc.vesper.http.core._
-import edu.ucsc.vesper.http.domain.LoungeObjects.Command
+import edu.ucsc.vesper.http.domain.Models.Command
+import spray.httpx.SprayJsonSupport
+import SprayJsonSupport._
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -25,6 +27,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
    *
    */
   val interpreter : VesperInterpreter = VesperInterpreter()
+  val storage : VesperStorage         = VesperStorage()
 
   val greetings =
     path("hi") {
@@ -37,6 +40,8 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val search =
     path("search") {
+      // TODO (Huascar): Improve the search mechanism so that Vesper can take queries (simple and complex ones)
+      // TODO (Huascar): Once this update is done, please consider removing the `emit` directive
       authenticate(vesperin) { membership =>
         get {
           authorize(isReviewer(membership)){
@@ -53,10 +58,10 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
-  val curate =
-    path("try"){
+  val cure =
+    path("cure"){
       authenticate(vesperin) { membership =>
-        (put | post | parameter('method ! "c")) {
+        (post | parameter('method ! "c")) {
           authorize(isCurator(membership)){
             entity(as[Command]) {
               command =>
@@ -71,8 +76,42 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
+  val persist =
+      path("persist"){
+        authenticate(vesperin) { membership =>
+          /** Put the <new_codesnippet> on the server! **/
+          put {
+            authorize(isCurator(membership)){
+              entity(as[Command]) {
+                command =>
+                  detach(){
+                    onComplete(storage.persist(command)){
+                      case changeSummary => complete(changeSummary)
+                    }
+                  }
+              }
+            }
+          }
+        }
+      }
+
+  val emit =
+    path("snippets"){
+      authenticate(vesperin) { membership =>
+        get {
+          authorize(isReviewer(membership)){
+            detach() {
+              onComplete(storage.findAll()) {
+                case codes => complete(codes)
+              }
+            }
+          }
+        }
+      }
+    }
+
   val vesperRoutes =
     pathPrefix("api") {
-      greetings ~ search ~ curate
+      greetings ~ search ~ cure ~ persist ~ emit
     }
 }

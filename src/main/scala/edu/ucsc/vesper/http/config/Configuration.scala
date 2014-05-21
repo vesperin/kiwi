@@ -4,6 +4,7 @@ import com.typesafe.config.{ConfigValue, ConfigFactory}
 import java.util
 import java.util.Map.Entry
 import scala.collection.mutable
+import scala.util.Try
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -33,5 +34,21 @@ trait Configuration {
     val  x: Entry[String, ConfigValue] = roleIterator.next()
     club(x.getKey) = x.getValue.render.toInt
   }
+
+
+  /** Database host name/address. */
+  lazy val dbHost = Try(config.getString("db.host")).getOrElse("localhost")
+
+  /** Database host port number. */
+  lazy val dbPort = Try(config.getInt("db.port")).getOrElse(27017)
+
+  /** Service database name. */
+  lazy val dbName = Try(config.getString("db.name")).getOrElse("codesnippets")
+
+  /** User name used to access database. */
+  lazy val dbUser = Try(config.getString("db.user")).toOption.orNull
+
+  /** Password for specified user and database. */
+  lazy val dbPassword = Try(config.getString("db.password")).toOption.orNull
 
 }

@@ -2,21 +2,21 @@ package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.LoungeObjects._
+import edu.ucsc.vesper.http.domain.Models._
 import spray.http.DateTime
 import scala.collection.mutable
 import edu.ucsc.refactor.util.{CommitHistory, CommitPublisher, Commit}
 import edu.ucsc.refactor.spi._
 import scala.Some
-import edu.ucsc.vesper.http.domain.LoungeObjects.Auth
-import edu.ucsc.vesper.http.domain.LoungeObjects.Role
+import edu.ucsc.vesper.http.domain.Models.Auth
+import edu.ucsc.vesper.http.domain.Models.Role
 import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Interpreter extends Configuration with VesperConversions {
+trait Interpreter extends Configuration with VesperConversions with CommandFlattener {
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
@@ -337,20 +337,11 @@ trait Interpreter extends Configuration with VesperConversions {
 
     val environment: Refactorer = Vesper.createRefactorer()
 
-    val answer = List(
-      command.inspect,
-      command.remove,
-      command.rename,
-      command.optimize,
-      command.format,
-      command.deduplicate,
-      command.cleanup,
-      command.publish
-    ).flatten
-
     println(who.userId + " is curating at " + DateTime.now + "\n")
 
-    answer(0) match {
+    val answer = flatten(command)
+
+    answer match {
       case inspect:Inspect          => Future{evalInspect(environment, inspect)}
       case remove:Remove            => Future{evalRemove(environment, remove)}
       case rename:Rename            => Future{evalRename(environment, rename)}

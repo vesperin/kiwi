@@ -6,7 +6,7 @@ import spray.routing.authentication._
 import scala.Some
 import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.LoungeObjects._
+import edu.ucsc.vesper.http.domain.Models._
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)

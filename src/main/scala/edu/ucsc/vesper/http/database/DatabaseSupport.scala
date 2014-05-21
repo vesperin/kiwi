@@ -1,0 +1,82 @@
+package edu.ucsc.vesper.http.database
+
+import reactivemongo.api.{MongoDriver, MongoConnection}
+import scala.util.Properties
+import edu.ucsc.vesper.http.Main
+import sprest.models.{UUIDStringId, UniqueSelector}
+import scala.concurrent.ExecutionContext
+import reactivemongo.bson.BSONDocument
+
+import sprest.reactivemongo.ReactiveMongoPersistence
+import sprest.reactivemongo.typemappers._
+import sprest.Formats._
+import spray.json.RootJsonFormat
+import edu.ucsc.vesper.http.config.Configuration
+import edu.ucsc.vesper.http.domain.Models.Code
+
+
+/**
+ * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
+ *
+ */
+trait DatabaseSupport extends ReactiveMongoPersistence {
+  object ConnectionMaker extends Configuration {
+    def unapply(url: Option[String]): Option[MongoConnection] = {
+      val regex  = """mongodb://(\w+):(\w+)@([\w|\.]+):(\d+)/(\w+)""".r
+      val driver = new MongoDriver
+
+      url match {
+        case Some(regex(user, password, host, port, collectionName)) =>
+          val connection     = driver.connection(List("%s:%s".format(host, port)))
+          connection.authenticate(collectionName, user, password)
+          Some(connection)
+        case None =>
+          val localConnection = driver.connection(List("%s:%s".format(dbHost, dbPort)))
+          localConnection.authenticate(dbName, dbUser, dbPassword)
+          Some(driver.connection(List("localhost")))
+      }
+    }
+  }
+
+  val ConnectionMaker(connection) = Properties.envOrNone("MONGOHQ_URL")
+  // Gets a reference to the database 'codesnippets'
+  val db =  connection("codesnippets")(Main.system.dispatcher)
+
+  // Json mapping to / from BSON - in this case we want "_id" from BSON to be
+  // mapped to "id" in JSON in all cases
+  implicit object JsonTypeMapper extends SprayJsonTypeMapper with NormalizedIdTransformer
+
+  abstract class UnsecuredDAO[M <: sprest.models.Model[String]](collName: String)(implicit jsformat: RootJsonFormat[M])
+    extends CollectionDAO[M, String](db(collName)) {
+
+    case class Selector(id: String) extends UniqueSelector[M, String]
+
+    override def generateSelector(id: String) = Selector(id)
+    override protected def addImpl(m: M)(implicit ec: ExecutionContext) = doAdd(m)
+    override protected def updateImpl(m: M)(implicit ec: ExecutionContext) = doUpdate(m)
+    override def remove(selector: Selector)(implicit ec: ExecutionContext) = uncheckedRemoveById(selector.id)
+
+
+    def database    = db
+
+    def removeAll()(implicit ec: ExecutionContext) = collection.remove(BSONDocument.empty)
+    def findAll()(implicit ec: ExecutionContext) = find(BSONDocument.empty)
+  }
+
+  // MongoDB collections:
+  object CodeSnippets extends UnsecuredDAO[Code]("codesnippets") with UUIDStringId {
+    private def collectionsMatching(field: String, operator: String, targets: List[String]): BSONDocument = {
+      BSONDocument(field → BSONDocument(operator → targets))
+    }
+    
+    private def collectionsMatching(field: String, value:String): BSONDocument = BSONDocument(field → value)
+                                   
+    def forName(name: String)(implicit ec: ExecutionContext)                  = find(collectionsMatching("name", name))
+    def forTag(tag: String)(implicit ec: ExecutionContext)                    = find(collectionsMatching("tags", tag))
+    def forAllTags(tags: List[String])(implicit ec: ExecutionContext)         = find(collectionsMatching("tags", "$all", tags))
+    def forAnyOfTheseTags(tags: List[String])(implicit ec: ExecutionContext)  = find(collectionsMatching("tags", "$in", tags))
+  }
+
+}
+
+object DatabaseSupport extends DatabaseSupport
