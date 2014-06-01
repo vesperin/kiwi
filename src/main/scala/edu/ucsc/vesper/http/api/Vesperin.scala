@@ -20,90 +20,53 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
    * in order to perform the desired refactoring). It then returns the Future because it will again take some time
    * to actually create a `ChangeSummary`.  I.e. we are potentially dealing with two separate "costly" operations
    * here:
+   *
    * 1. Parsing code and then performing refactoring
    * 2. Creating a ChangeSummary object
    *
    * The first operation is "protected" with the detach() and the second one by returning a Future.
    *
+   * @see <pre><code> http://www.chrisstucchio.com/blog/2013/actors_vs_futures.html</code></pre>
+   *
    */
   val interpreter : VesperInterpreter = VesperInterpreter()
-  val storage : VesperStorage         = VesperStorage()
 
-  val greetings =
-    path("hi") {
+  val describe =
+    path("help") {
       get {
         complete{
-          "Hello, guest. I am Vesper; a lightweight source code curating framework for Java"
+          """|Hello, guest. I am Vesper; a lightweight source code curating framework for Java.
+             |My API's current version is 0.0.1.
+             |I'm maintained by Huascar A. Sanchez.
+             |My mission is simply to allow code foragers to cure source code on the Web.""".stripMargin
         }
       }
     }
 
-  val search =
-    path("search") {
-      // TODO (Huascar): Improve the search mechanism so that Vesper can take queries (simple and complex ones)
-      // TODO (Huascar): Once this update is done, please consider removing the `emit` directive
+  val vesper =
+    path("vesper"){
       authenticate(vesperin) { membership =>
-        get {
-          authorize(isReviewer(membership)){
-            parameter('q){
-              q =>
-                detach(){
-                  onComplete(interpreter.ask(membership.role, q)){
-                    case answer => complete(answer)
-                  }
-                }
-            }
-          }
-        }
-      }
-    }
-
-  val cure =
-    path("cure"){
-      authenticate(vesperin) { membership =>
-        (post | parameter('method ! "c")) {
+        post {
           authorize(isCurator(membership)){
             entity(as[Command]) {
               command =>
                 detach(){
-                  onComplete(interpreter.eval(membership.auth, command)){
-                    case changeSummary => complete(changeSummary)
+                  onComplete(interpreter.eval(membership, command)){
+                    case result => complete(result)
                   }
                 }
             }
           }
-        }
-      }
-    }
-
-  val persist =
-      path("persist"){
-        authenticate(vesperin) { membership =>
-          /** Put the <new_codesnippet> on the server! **/
-          put {
-            authorize(isCurator(membership)){
-              entity(as[Command]) {
-                command =>
-                  detach(){
-                    onComplete(storage.persist(command)){
-                      case changeSummary => complete(changeSummary)
-                    }
-                  }
-              }
-            }
-          }
-        }
-      }
-
-  val emit =
-    path("snippets"){
-      authenticate(vesperin) { membership =>
+        } ~
         get {
           authorize(isReviewer(membership)){
-            detach() {
-              onComplete(storage.findAll()) {
-                case codes => complete(codes)
-              }
+            parameter('c){
+              c =>
+                detach(){
+                  onComplete(interpreter.eval(membership, c)){
+                    case result => complete(result)
+                  }
+                }
             }
           }
         }
@@ -112,6 +75,6 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val vesperRoutes =
     pathPrefix("api") {
-      greetings ~ search ~ cure ~ persist ~ emit
+      describe ~ vesper
     }
 }

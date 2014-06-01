@@ -60,23 +60,10 @@ trait DatabaseSupport extends ReactiveMongoPersistence {
     def database    = db
 
     def removeAll()(implicit ec: ExecutionContext) = collection.remove(BSONDocument.empty)
-    def findAll()(implicit ec: ExecutionContext) = find(BSONDocument.empty)
   }
 
   // MongoDB collections:
-  object CodeSnippets extends UnsecuredDAO[Code]("codesnippets") with UUIDStringId {
-    private def collectionsMatching(field: String, operator: String, targets: List[String]): BSONDocument = {
-      BSONDocument(field → BSONDocument(operator → targets))
-    }
-    
-    private def collectionsMatching(field: String, value:String): BSONDocument = BSONDocument(field → value)
-                                   
-    def forName(name: String)(implicit ec: ExecutionContext)                  = find(collectionsMatching("name", name))
-    def forTag(tag: String)(implicit ec: ExecutionContext)                    = find(collectionsMatching("tags", tag))
-    def forAllTags(tags: List[String])(implicit ec: ExecutionContext)         = find(collectionsMatching("tags", "$all", tags))
-    def forAnyOfTheseTags(tags: List[String])(implicit ec: ExecutionContext)  = find(collectionsMatching("tags", "$in", tags))
-  }
-
+  object Sources extends UnsecuredDAO[Code]("codesnippets") with UUIDStringId
 }
 
 object DatabaseSupport extends DatabaseSupport

@@ -77,6 +77,18 @@ object Models {
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Persist(source: Code)
 
+  // Find(any: Option[], all: Option[] ...
+  case class Any(name: String, targets: List[String])
+  case class Exact(name: String, value: String)
+  case class ExactlyAll(name: String, targets: List[String])
+  case class All(symbol: String = "*")
+  case class Find(
+        all: Option[All]              = None,
+        any: Option[Any]              = None,
+        exact: Option[Exact]          = None,
+        exactlyAll:Option[ExactlyAll] = None,
+        roles: Option[String]         = None
+  )
 
   case class Warning(name: String, description: String, where: Option[List[Int]])
   case class Failure(message: String)
@@ -84,14 +96,16 @@ object Models {
 
   case class Answer(items: List[String])
 
-  // the result of every refactoring
-  case class ChangeSummary(
+  // the result returned by Vesper; a refactoring or results request
+  case class Result(
         draft: Option[Draft]            = None,
         info: Option[Info]              = None,
         warnings: Option[List[Warning]] = None,
-        failure: Option[Failure]        = None
+        failure: Option[Failure]        = None,
+        sources: Option[List[Code]]     = None
   )
 
+  // the command to request some result
   case class Command(
         inspect: Option[Inspect]          = None,
         remove:  Option[Remove]           = None,
@@ -101,7 +115,8 @@ object Models {
         deduplicate: Option[Deduplicate]  = None,
         cleanup: Option[Cleanup]          = None,
         publish: Option[Publish]          = None,
-        persist: Option[Persist]          = None
+        persist: Option[Persist]          = None,
+        find: Option[Find]                = None
   )
 
 
@@ -149,6 +164,26 @@ object Models {
     implicit val publishFormats = jsonFormat1(Publish.apply)
   }
 
+  object All extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val allFormat = jsonFormat1(All.apply)
+  }
+
+  object Any extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val anyFormat = jsonFormat2(Any.apply)
+  }
+
+  object Exact extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val exactFormat = jsonFormat2(Exact.apply)
+  }
+
+  object ExactlyAll extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val exactlyAllFormat = jsonFormat2(ExactlyAll.apply)
+  }
+
+  object Find extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val findFormats = jsonFormat5(Find.apply)
+  }
+
   object Persist extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val persistFormats = jsonFormat1(Persist.apply)
   }
@@ -169,11 +204,11 @@ object Models {
     implicit val answerFormats = jsonFormat1(Answer.apply)
   }
 
-  object ChangeSummary extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val changeSummaryFormats = jsonFormat4(ChangeSummary.apply)
+  object Result extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val changeSummaryFormats = jsonFormat5(Result.apply)
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat9(Command.apply)
+    implicit val requestFormats = jsonFormat10(Command.apply)
   }
 }

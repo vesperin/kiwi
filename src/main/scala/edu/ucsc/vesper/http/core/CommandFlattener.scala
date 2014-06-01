@@ -1,6 +1,6 @@
 package edu.ucsc.vesper.http.core
 
-import edu.ucsc.vesper.http.domain.Models.Command
+import edu.ucsc.vesper.http.domain.Models.{Find, Command}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -17,10 +17,23 @@ trait CommandFlattener {
       command.deduplicate,
       command.cleanup,
       command.publish,
+      command.find,
       command.persist
     ).flatten
 
-    answer(0)
+    if (answer == Nil) Nil else answer(0)
+  }
+
+  def flatten(find: Find) = {
+    val answer = List(
+      find.all,
+      find.any,
+      find.exact,
+      find.exactlyAll,
+      find.roles
+    ).flatten
+
+    if (answer == Nil) Nil else answer(0)
   }
 
 }

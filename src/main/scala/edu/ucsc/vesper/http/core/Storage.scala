@@ -1,37 +1,38 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.vesper.http.domain.Models._
-import scala.concurrent.{Future, ExecutionContext}
-import edu.ucsc.vesper.http.database.DatabaseSupport.CodeSnippets
+import edu.ucsc.vesper.http.database.DatabaseSupport._
+import scala.concurrent.{ExecutionContext, Future}
+import reactivemongo.bson.BSONDocument
+import scala.Some
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Storage extends CommandFlattener {
+private[core] trait Storage {
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
-
-  private def evalPersist(persist: Persist): Future[Option[ChangeSummary]] = CodeSnippets.add(persist.source).flatMap { code =>
-    Future { Some(ChangeSummary(info = Some(Info(List("%s was successfully stored on the server!".format(code.name)))))) }
+  def persist(code: Code): Future[Option[Result]] = Sources.add(code).flatMap {
+    theCode => Future(Some(Result(info = Some(Info(List("%s was saved!".format(theCode.name)))))))
   }
 
-  def persist(command: Command): Future[Option[ChangeSummary]] = {
-    val answer = flatten(command)
-    answer match {
-      case persist:Persist          => evalPersist(persist)
-      case _                        => communicateFailure("Oh snap! Unable to recognize the given command")
-    }
+  def find(doc: BSONDocument): Future[Option[Result]] = Sources.find(doc).flatMap {
+    codes => Future(Some(Result(sources = Some(codes))))
   }
 
-  def findAll()                         = CodeSnippets.findAll()
-  def findBySingleTag(tag: String)      = CodeSnippets.forTag(tag)
-  def findByAllTags(tags: List[String]) = CodeSnippets.forAllTags(tags)
-  def findByAnyTags(tags: List[String]) = CodeSnippets.forAnyOfTheseTags(tags)
+  def findAll(): Future[Option[Result]] = find(BSONDocument.empty)
 
-  private def communicateFailure(message: String): Future[Option[ChangeSummary]] = {
-    Future { Some(ChangeSummary(failure = Some(Failure(message)))) }
+  def find(any: Any): Future[Option[Result]] = find(BSONDocument(any.name → BSONDocument("$in" → any.targets)))
+
+  def find(exact: Exact): Future[Option[Result]] = find(BSONDocument(exact.name → exact.value))
+
+  def find(exactlyAll: ExactlyAll): Future[Option[Result]] = find(BSONDocument(exactlyAll.name → BSONDocument("$all" → exactlyAll.targets)))
+
+  def clear(): Future[Option[Result]] = Sources.removeAll().flatMap {
+    lastError => Future(Some(Result(failure = Some(Failure(lastError.errMsg.get)))))
   }
+
 }
 
 case class VesperStorage() extends Storage

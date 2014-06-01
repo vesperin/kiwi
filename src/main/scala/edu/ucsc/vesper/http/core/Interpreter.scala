@@ -11,7 +11,7 @@ import scala.Some
 import edu.ucsc.vesper.http.domain.Models.Auth
 import edu.ucsc.vesper.http.domain.Models.Role
 import scala.collection.JavaConversions._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Promise, ExecutionContext, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -20,47 +20,104 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
+  val parser: Parser    = CommandParser()
+  val storage: Storage  = VesperStorage()
+
   val Curator     = 0
   val Reviewer    = 1
 
-  def ask(who:Role, question:String): Future[Option[Answer]] = {
-
+  private def emitRoles(who:Role, question:String): Future[Option[Result]] = {
     def f(x: Int): Boolean = if(x == Reviewer) true else false
     def g(x: Int): Boolean = if(x == Curator)  true else false
 
-    if(who.id != Curator) return Future{Some(Answer(List("You are not authorized to see these resources.")))}
 
-    question  match {
-      case "curators"   => Future{Some(Answer(club.filter {case (k,v) => g(v)}.keySet.toList))}
-      case "reviewers"  => Future{Some(Answer(club.filter {case (k,v) => f(v)}.keySet.toList))}
-      case "everybody"  => Future{Some(Answer(passwords.keySet.toList))}
-    }
-  }
-
-
-  private def evalInspect(refactorer: Refactorer, inspect: Inspect): Option[ChangeSummary] = {
-    try {
-      val vesperSource: Source = asSource(inspect.source)
-
-      val issues:mutable.Set[Issue]         = asScalaSet(refactorer.detectIssues(vesperSource))
-      var warnings:mutable.Buffer[Warning]  = mutable.Buffer.empty[Warning]
-
-      for(i <- issues){
-        warnings += asWarning(vesperSource, i)
+    val askQuestion: Future[mutable.Buffer[String]] = Future {
+      var result: mutable.Buffer[String] = mutable.Buffer.empty[String]
+      question  match {
+        case "curators"   => result ++ club.filter {case (k,v) => g(v)}.keySet.toList
+        case "reviewers"  => result ++ club.filter {case (k,v) => f(v)}.keySet.toList
+        case "everybody"  => result ++ passwords.keySet.toList
+        case _            => result += "Unknown query!"
       }
+    }
 
-      val result = if(!warnings.isEmpty){
-        Some(ChangeSummary(warnings = Some(warnings.toList)))
+    def produceResult(answer: mutable.Buffer[String]) = Future {
+      var result: Option[Result] = None
+      if(who.id != Curator) {
+        result = Some(Result(failure = Some(Failure("You are not authorized to see these resources."))))
       } else {
-        var messages:mutable.Buffer[String]  = mutable.Buffer.empty[String]
-        messages += "It looks clear!"
-        Some(ChangeSummary(info = Some(Info(messages.toList))))
+        answer.toList match {
+          case first :: rest =>
+            if(first == "Unknown query!") {
+              result = Some(Result(failure = Some(Failure(first))))
+            } else {
+              result = Some(Result(info = Some(Info(answer.toList))))
+            }
+          case Nil => result = Some(Result(info = Some(Info(List("No roles found!")))))
+        }
+
       }
 
       result
+
+    }
+
+    val queried = for {
+      answer <- askQuestion
+      result <- produceResult(answer)
+    } yield {
+      result
+    }
+
+    queried
+  }
+
+  private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
+    try {
+
+      val collectSource: Future[Source] = Future {
+        asSource(inspect.source)
+      }
+
+
+      def collectIssues(vesperSource: Source): Future[mutable.Set[Issue]] = Future {
+        asScalaSet(refactorer.detectIssues(vesperSource))
+      }
+
+
+      def collectWarnings(vesperSource: Source, issues: mutable.Set[Issue]): Future[mutable.Buffer[Warning]] = {
+        var warnings:mutable.Buffer[Warning]  = mutable.Buffer.empty[Warning]
+        for(i <- issues){
+          warnings += asWarning(vesperSource, i)
+        }
+
+        Future {warnings}
+      }
+
+      def produceResult (warnings: mutable.Seq[Warning]): Future[Option[Result]] = {
+        if(!warnings.isEmpty){
+          Future{Some(Result(warnings = Some(warnings.toList)))}
+        } else {
+          var messages:mutable.Buffer[String]  = mutable.Buffer.empty[String]
+          messages += "It looks clear!"
+          Future{Some(Result(info = Some(Info(messages.toList))))}
+        }
+      }
+
+      val inspected = for {
+        vesperSource  <- collectSource
+        issues        <- collectIssues(vesperSource)
+        warnings      <- collectWarnings(vesperSource, issues)
+        result        <- produceResult(warnings)
+      } yield {
+        result
+      }
+
+      inspected
+
     } catch {
       case e: Exception =>
-        Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
     }
 
   }
@@ -76,29 +133,50 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
   }
 
-  private def removeMember(refactorer:Refactorer, what: String, where: List[Int], source: Source): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
+  private def removeMember(refactorer:Refactorer, what: String, where: List[Int], source: Source): Future[Option[Result]] = {
     try {
-      val select: SourceSelection = new SourceSelection(source, where(0), where(1))
-      val request: ChangeRequest  = createRemoveChangeRequest(what, select)
-
-      val change: Change          = refactorer.createChange(request)
-      val commit: Commit          = refactorer.apply(change)
-
-      commit != null && commit.isValidCommit match {
-        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
+      val createRequest: Future[ChangeRequest] = Future {
+        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+        createRemoveChangeRequest(what, select)
       }
+
+      def createChange(request: ChangeRequest): Future[Change] = Future {
+        refactorer.createChange(request)
+      }
+
+      def applyChange(change: Change): Future[Commit] = Future {
+        refactorer.apply(change)
+      }
+
+      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+        var result: Option[Result]  = None
+        commit != null && commit.isValidCommit match {
+          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+        }
+
+        result
+      }
+
+
+      val removed = for {
+        request  <- createRequest
+        change   <- createChange(request)
+        commit   <- applyChange(change)
+        result   <- produceResult(change, commit)
+      } yield {
+        result
+      }
+
+      removed
 
     } catch {
       case e: Exception =>
-        return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
     }
-
-    result
   }
 
-  private def evalRemove(refactorer: Refactorer, delete: Remove): Option[ChangeSummary] = {
+  private def evalRemove(refactorer: Refactorer, delete: Remove): Future[Option[Result]] = {
     val what:String           = delete.what
     val where:List[Int]       = delete.where
     val vesperSource: Source  = asSource(delete.source)
@@ -117,28 +195,50 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
   }
 
-  private def renameMember(refactorer: Refactorer, what: String, name: String, where: List[Int], source: Source): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
+  private def renameMember(refactorer: Refactorer, what: String, name: String, where: List[Int], source: Source): Future[Option[Result]] = {
     try {
-      val select: SourceSelection = new SourceSelection(source, where(0), where(1))
-      val request: ChangeRequest  = createRenameChangeRequest(what, name, select)
 
-      val change: Change          = refactorer.createChange(request)
-      val commit: Commit          = refactorer.apply(change)
-
-      commit != null && commit.isValidCommit match {
-        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
+      val createRequest: Future[ChangeRequest] = Future {
+        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+        createRenameChangeRequest(what, name, select)
       }
 
-    } catch {
-      case e: Exception => return Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
-    }
+      def createChange(request: ChangeRequest): Future[Change] = Future {
+        refactorer.createChange(request)
+      }
 
-    result
+      def applyChange(change: Change): Future[Commit] = Future {
+        refactorer.apply(change)
+      }
+
+      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+        var result: Option[Result]  = None
+        commit != null && commit.isValidCommit match {
+          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+        }
+
+        result
+      }
+
+
+      val renamed = for {
+        request  <- createRequest
+        change   <- createChange(request)
+        commit   <- applyChange(change)
+        result   <- produceResult(change, commit)
+      } yield {
+        result
+      }
+
+      renamed
+
+    } catch {
+      case e: Exception => Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+    }
   }
 
-  private def evalRename(refactorer: Refactorer, rename: Rename): Option[ChangeSummary] = {
+  private def evalRename(refactorer: Refactorer, rename: Rename): Future[Option[Result]] = {
     val what:String           = rename.what
     val where:List[Int]       = rename.where
     val name: String          = rename.to
@@ -147,100 +247,139 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     renameMember(refactorer, what, name, where, vesperSource)
   }
 
-  private def evalOptimize(refactorer: Refactorer, optimize: Optimize): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
+  private def evalOptimize(refactorer: Refactorer, optimize: Optimize): Future[Option[Result]] = {
 
-    val vesperSource: Source  = asSource(optimize.source)
-
-    val request:ChangeRequest   = ChangeRequest.optimizeImports(vesperSource)
-    val change: Change          = refactorer.createChange(request)
-    val commit: Commit          = refactorer.apply(change)
-
-    commit != null && commit.isValidCommit match {
-      case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-      case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
+    val collectSource: Future[Source] = Future {
+      asSource(optimize.source)
     }
 
-    result
-  }
 
-  private def evalFormat(refactorer: Refactorer, format: Format): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
-
-    val vesperSource: Source  = asSource(format.source)
-
-    val request:ChangeRequest   = ChangeRequest.reformatSource(vesperSource)
-    val change: Change          = refactorer.createChange(request)
-    val commit: Commit          = refactorer.apply(change)
-
-    commit != null && commit.isValidCommit match {
-      case true =>  result = Some(ChangeSummary(draft = Some(asFormattedDraft(commit))))
-      case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
+    def createRequest(source: Source): Future[ChangeRequest] = Future {
+      ChangeRequest.optimizeImports(source)
     }
 
-    result
+    def createChange(request: ChangeRequest): Future[Change] = Future {
+      refactorer.createChange(request)
+    }
+
+    def applyChange(change: Change): Future[Commit] = Future {
+      refactorer.apply(change)
+    }
+
+
+    def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+      var result: Option[Result]  = None
+      commit != null && commit.isValidCommit match {
+        case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+        case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+      }
+
+      result
+    }
+
+
+    val optimized = for {
+      source   <- collectSource
+      request  <- createRequest(source)
+      change   <- createChange(request)
+      commit   <- applyChange(change)
+      result   <- produceResult(change, commit)
+    } yield {
+      result
+    }
+
+    optimized
   }
 
-  private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
+  private def evalFormat(refactorer: Refactorer, format: Format): Future[Option[Result]] = {
 
-    val vesperSource: Source        = asSource(cleanup.source)
-    val queue:mutable.Queue[Source] = new mutable.Queue[Source]
+    val collectSource: Future[Source] = Future {
+      asSource(format.source)
+    }
 
-    queue += vesperSource
+    def createRequest(source: Source): Future[ChangeRequest] = Future {
+      ChangeRequest.reformatSource(source)
+    }
+
+    def createChange(request: ChangeRequest): Future[Change] = Future {
+      refactorer.createChange(request)
+    }
+
+    def applyChange(change: Change): Future[Commit] = Future {
+      refactorer.apply(change)
+    }
+
+    def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+      var result: Option[Result]  = None
+      commit != null && commit.isValidCommit match {
+        case true =>  result = Some(Result(draft = Some(asFormattedDraft(commit))))
+        case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+      }
+
+      result
+    }
 
 
-    def createCommit(refactorer: Refactorer, issue: Issue): Commit = {
+    val reformatted = for {
+      source   <- collectSource
+      request  <- createRequest(source)
+      change   <- createChange(request)
+      commit   <- applyChange(change)
+      result   <- produceResult(change, commit)
+    } yield {
+      result
+    }
+
+    reformatted
+  }
+
+  private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
+
+    def collectSource: Future[Source] = Future {
+      asSource(cleanup.source)
+    }
+
+    def detectIssues(source: Source): mutable.Set[Issue] = {
+      val result:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(source))
+      result
+    }
+
+    def createCommit(issue: Issue): Commit = {
       val change: Change = refactorer.createChange(ChangeRequest.forIssue(issue))
       val commit: Commit = refactorer.apply(change)
 
       commit
     }
 
+    def batchChanges(source: Source): Future [mutable.Stack[Commit]] = Future {
+      val Q: mutable.Queue[Source] = new mutable.Queue[Source]
+      val S: mutable.Stack[Commit] = new mutable.Stack[Commit]
 
-    val stack:mutable.Stack[Commit] = new mutable.Stack[Commit]
+      Q += source
 
-    while(!queue.isEmpty){
-      val code: Source = queue.dequeue()
-      val issues:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(code))
+      while(!Q.isEmpty){
+        val src: Source = Q.dequeue()
 
-      for(i <- issues){
-        val name: Smell = i.getName
-        if (Names.hasAvailableResponse(name)) { // the assumption is there is ONE instance of DEDUPLICATE issue
-          if (Names.from(i.getName).isSame(Refactoring.DEDUPLICATE) && queue.isEmpty) {
+        val issues: mutable.Set[Issue] = detectIssues(src).filter(
+          i => Names.hasAvailableResponse(i.getName)
+            && (Names.from(i.getName).isSame(Refactoring.DEDUPLICATE)
+            || Names.from(i.getName).isSame(Refactoring.DELETE_UNUSED_IMPORTS)))
 
-            val commit: Commit = createCommit(refactorer, i)
-
-            if(commit != null){
-              if(commit.isValidCommit){
-
-                stack.push(commit)
-
-                queue   += commit.getSourceAfterChange
-              }
-            }
-          } else if(Names.from(i.getName).isSame(Refactoring.DELETE_UNUSED_IMPORTS) && queue.isEmpty){
-
-            val commit: Commit = createCommit(refactorer, i)
-
-            if(commit != null){
-              if(commit.isValidCommit){
-
-                stack.push(commit)
-
-                queue += commit.getSourceAfterChange
-              }
-            }
+        for(i <- issues){
+          val c: Commit = createCommit(i)
+          if(c != null && c.isValidCommit && Q.isEmpty) {
+            S.push(c)
+            Q.enqueue(c.getSourceAfterChange)
           }
         }
       }
 
+      S
     }
 
-
-    result = if (!stack.isEmpty) {
+    def produceResult(vesperSource: Source, stack:mutable.Stack[Commit]): Future[Option[Result]] = Future {
       Some(
-        ChangeSummary(
+        Result(
           draft = Some(
             asFormattedDraft(
               stack.pop(),
@@ -250,90 +389,145 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
           )
         )
       )
-    } else {  // at least format the code
-      val request:ChangeRequest   = ChangeRequest.reformatSource(vesperSource)
-      val change: Change          = refactorer.createChange(request)
-      val commit: Commit          = refactorer.apply(change)
-
-      var reformatResult: Option[ChangeSummary] = None
-
-      commit != null && commit.isValidCommit match {
-        case true =>
-          reformatResult = Some(
-            ChangeSummary(
-              draft = Some(
-                asFormattedDraft(
-                  commit,
-                  cause       = "Full cleanup",
-                  description = "Reformatted code and also removed code redundancies"
-                )
-              )
-            )
-          )
-        case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
-      }
-
-      reformatResult
     }
 
-    result
+    val cleanedUp = for {
+      source  <- collectSource
+      commits <- batchChanges(source)
+      result  <- produceResult(source, commits)
+    } yield {
+      println(result)
+      result
+    }
+
+    cleanedUp
   }
 
-  private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Option[ChangeSummary] = {
-    var result: Option[ChangeSummary] = None
+  private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Future[Option[Result]] = {
 
-    val vesperSource: Source      = asSource(deduplicate.source)
-    val issues:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(vesperSource))
 
-    for(i <- issues){
-      val name: Smell = i.getName
-      if (Names.hasAvailableResponse(name)) { // the assumption is there is ONE instance of DEDUPLICATE issue
-        if (Names.from(i.getName).isSame(Refactoring.DEDUPLICATE)) {
-          val change: Change = refactorer.createChange(ChangeRequest.forIssue(i))
-          val commit: Commit = refactorer.apply(change)
+    val collectSource: Future[Source] = Future {
+      asSource(deduplicate.source)
+    }
 
-          commit != null && commit.isValidCommit match {
-            case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-            case false => result = Some(ChangeSummary(failure = Some(Failure(change.getErrors.mkString(" ")))))
-          }
+    def collectIssues(vesperSource: Source): Future[mutable.Set[Issue]] = Future {
+      asScalaSet(refactorer.detectIssues(vesperSource))
+    }
+
+    def filterNonDeduplicateIssues(issues:mutable.Set[Issue]): Future[mutable.Set[Issue]] = Future {
+       issues.filter(i => Names.hasAvailableResponse(i.getName) && Names.from(i.getName).isSame(Refactoring.DEDUPLICATE))
+    }
+
+
+    def applyChanges(filteredIssues:mutable.Set[Issue]): Future[mutable.Buffer[Commit]] = Future {
+      val commits: mutable.Buffer[Commit] = mutable.Buffer.empty[Commit]
+      for(i <- filteredIssues){
+        val change: Change = refactorer.createChange(ChangeRequest.forIssue(i))
+        val commit: Commit = refactorer.apply(change)
+        commits += commit
+      }
+
+      commits
+    }
+
+
+    def produceResult(commits: mutable.Buffer[Commit]): Future[Option[Result]] = Future {
+      var result: Option[Result]  = None
+
+      for(c <- commits){
+        c != null && c.isValidCommit match {
+          case true   =>  result = Some(Result(draft = Some(asDraft(c))))
+          case false  =>  println("useless commit")
         }
-      }
-    }
-
-    result
-  }
-
-
-  private def evalPublish(who:Auth, publish: Publish): Option[ChangeSummary] = {
-    try {
-
-      val commitHistory: CommitHistory = new CommitHistory()
-
-      for(d <- publish.drafts){
-        commitHistory.add(asCommit(who.userId, d))
-      }
-
-      val p: CommitPublisher = new CommitPublisher(
-        commitHistory,
-        new Credential(who.userId, who.token)
-      )
-
-      var result: Option[ChangeSummary]   = None
-      val commits:mutable.Buffer[Commit]  = asScalaBuffer(p.publish())
-      val commit: Commit                  = commits.last
-
-      commit != null && commit.isValidCommit match {
-        case true =>  result = Some(ChangeSummary(draft = Some(asDraft(commit))))
-        case false => result = Some(ChangeSummary(failure = Some(Failure("Unable to publish commit"))))
       }
 
       result
-    } catch {
-      case e: Exception => Some(ChangeSummary(failure = Some(Failure(e.getMessage))))
+    }
+
+    val deduplicated = for {
+      source   <- collectSource
+      issues   <- collectIssues(source)
+      fIssues  <- filterNonDeduplicateIssues(issues)
+      changes  <- applyChanges(fIssues)
+      result   <- produceResult(changes)
+    } yield {
+      result
+    }
+
+    deduplicated
+
+  }
+
+
+  private def evalFind(who: Role, find: Find) : Future[Option[Result]] = {
+
+    val answer = flatten(find)
+
+    answer match {
+      case role: String           => emitRoles(who, role)
+      case all: All               => storage.findAll()
+      case any: Any               => storage.find(any)
+      case exact: Exact           => storage.find(exact)
+      case exactlyAll: ExactlyAll => storage.find(exactlyAll)
+      case _                      => Future(Some(Result(failure = Some(Failure("Unknown command")))))
     }
   }
 
-  def eval(who:Auth, command: Command): Future[Option[ChangeSummary]] = {
+
+  private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
+    val theCode: Code = persist.source
+    println(who.userId + " is persisting " + theCode.name + "\n")
+
+    storage.persist(theCode)
+  }
+
+
+  private def evalPublish(who:Auth, publish: Publish): Future[Option[Result]] = {
+    try {
+
+      val published = Promise[Option[Result]]()
+
+      val publishCode = Future {
+        val commitHistory: CommitHistory = new CommitHistory()
+
+        for(d <- publish.drafts){
+          commitHistory.add(asCommit(who.userId, d))
+        }
+
+        val p: CommitPublisher = new CommitPublisher(
+          commitHistory,
+          new Credential(who.userId, who.token)
+        )
+
+        var result: Option[Result]   = None
+        val commits:mutable.Buffer[Commit]  = asScalaBuffer(p.publish())
+        val commit: Commit                  = commits.last
+
+        commit != null && commit.isValidCommit match {
+          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case false => result = Some(Result(failure = Some(Failure("Unable to publish commit"))))
+        }
+
+        result
+      }
+
+      publishCode.onComplete { tr =>
+        published.complete(tr)
+      }
+
+      published.future
+    } catch {
+      case e: Exception => Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+    }
+  }
+
+  private def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
+
+  def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
+
+  def eval(membership: Membership, command: Command): Future[Option[Result]] = {
+    val who: Auth               = membership.auth
+    val what: Role              = membership.role
 
     val environment: Refactorer = Vesper.createRefactorer()
 
@@ -342,15 +536,17 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     val answer = flatten(command)
 
     answer match {
-      case inspect:Inspect          => Future{evalInspect(environment, inspect)}
-      case remove:Remove            => Future{evalRemove(environment, remove)}
-      case rename:Rename            => Future{evalRename(environment, rename)}
-      case optimize:Optimize        => Future{evalOptimize(environment, optimize)}
-      case format:Format            => Future{evalFormat(environment, format)}
-      case deduplicate:Deduplicate  => Future{evalDeduplicate(environment, deduplicate)}
-      case cleanup:Cleanup          => Future{evalCleanup(environment, cleanup)}
-      case publish:Publish          => Future{evalPublish(who, publish)}
-      case _                        => Future{Some(ChangeSummary(failure = Some(Failure("Unknown command!"))))}
+      case inspect:Inspect          => evalInspect(environment, inspect)
+      case remove:Remove            => evalRemove(environment, remove)
+      case rename:Rename            => evalRename(environment, rename)
+      case optimize:Optimize        => evalOptimize(environment, optimize)
+      case format:Format            => evalFormat(environment, format)
+      case deduplicate:Deduplicate  => evalDeduplicate(environment, deduplicate)
+      case cleanup:Cleanup          => evalCleanup(environment, cleanup)
+      case publish:Publish          => evalPublish(who, publish)
+      case find: Find               => evalFind(what, find)
+      case persist: Persist         => evalPersist(who, persist)
+      case _                        => unknownCommand()
     }
   }
 }
