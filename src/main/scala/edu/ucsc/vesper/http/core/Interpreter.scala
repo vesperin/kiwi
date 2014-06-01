@@ -3,15 +3,14 @@ package edu.ucsc.vesper.http.core
 import edu.ucsc.refactor._
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models._
-import spray.http.DateTime
 import scala.collection.mutable
-import edu.ucsc.refactor.util.{CommitHistory, CommitPublisher, Commit}
+import edu.ucsc.refactor.util.Commit
 import edu.ucsc.refactor.spi._
 import scala.Some
 import edu.ucsc.vesper.http.domain.Models.Auth
 import edu.ucsc.vesper.http.domain.Models.Role
 import scala.collection.JavaConversions._
-import scala.concurrent.{Promise, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -72,27 +71,34 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     queried
   }
 
+  private[core] def collectSource(code: Code): Future[Source] = Future {
+    asSource(code)
+  }
+
+  private[core] def collectIssues(refactorer: Refactorer, source: Source): Future[mutable.Set[Issue]] = Future {
+    asScalaSet(refactorer.detectIssues(source))
+  }
+
+  private[core] def collectWarnings(vesperSource: Source, issues: mutable.Set[Issue]): Future[mutable.Buffer[Warning]] = Future {
+    var warnings:mutable.Buffer[Warning]  = mutable.Buffer.empty[Warning]
+    for(i <- issues){
+      warnings += asWarning(vesperSource, i)
+    }
+
+    warnings
+  }
+
+
+  private[core] def createChange(refactorer: Refactorer, request: ChangeRequest): Future[Change] = Future {
+    refactorer.createChange(request)
+  }
+
+  private[core] def applyChange(refactorer: Refactorer, change: Change): Future[Commit] = Future {
+    refactorer.apply(change)
+  }
+
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
-
-      val collectSource: Future[Source] = Future {
-        asSource(inspect.source)
-      }
-
-
-      def collectIssues(vesperSource: Source): Future[mutable.Set[Issue]] = Future {
-        asScalaSet(refactorer.detectIssues(vesperSource))
-      }
-
-
-      def collectWarnings(vesperSource: Source, issues: mutable.Set[Issue]): Future[mutable.Buffer[Warning]] = {
-        var warnings:mutable.Buffer[Warning]  = mutable.Buffer.empty[Warning]
-        for(i <- issues){
-          warnings += asWarning(vesperSource, i)
-        }
-
-        Future {warnings}
-      }
 
       def produceResult (warnings: mutable.Seq[Warning]): Future[Option[Result]] = {
         if(!warnings.isEmpty){
@@ -105,8 +111,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       }
 
       val inspected = for {
-        vesperSource  <- collectSource
-        issues        <- collectIssues(vesperSource)
+        vesperSource  <- collectSource(inspect.source)
+        issues        <- collectIssues(refactorer, vesperSource)
         warnings      <- collectWarnings(vesperSource, issues)
         result        <- produceResult(warnings)
       } yield {
@@ -140,14 +146,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
         createRemoveChangeRequest(what, select)
       }
 
-      def createChange(request: ChangeRequest): Future[Change] = Future {
-        refactorer.createChange(request)
-      }
-
-      def applyChange(change: Change): Future[Commit] = Future {
-        refactorer.apply(change)
-      }
-
       def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
         var result: Option[Result]  = None
         commit != null && commit.isValidCommit match {
@@ -161,8 +159,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
       val removed = for {
         request  <- createRequest
-        change   <- createChange(request)
-        commit   <- applyChange(change)
+        change   <- createChange(refactorer, request)
+        commit   <- applyChange(refactorer, change)
         result   <- produceResult(change, commit)
       } yield {
         result
@@ -203,14 +201,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
         createRenameChangeRequest(what, name, select)
       }
 
-      def createChange(request: ChangeRequest): Future[Change] = Future {
-        refactorer.createChange(request)
-      }
-
-      def applyChange(change: Change): Future[Commit] = Future {
-        refactorer.apply(change)
-      }
-
       def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
         var result: Option[Result]  = None
         commit != null && commit.isValidCommit match {
@@ -224,8 +214,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
       val renamed = for {
         request  <- createRequest
-        change   <- createChange(request)
-        commit   <- applyChange(change)
+        change   <- createChange(refactorer, request)
+        commit   <- applyChange(refactorer, change)
         result   <- produceResult(change, commit)
       } yield {
         result
@@ -249,23 +239,9 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   private def evalOptimize(refactorer: Refactorer, optimize: Optimize): Future[Option[Result]] = {
 
-    val collectSource: Future[Source] = Future {
-      asSource(optimize.source)
-    }
-
-
     def createRequest(source: Source): Future[ChangeRequest] = Future {
       ChangeRequest.optimizeImports(source)
     }
-
-    def createChange(request: ChangeRequest): Future[Change] = Future {
-      refactorer.createChange(request)
-    }
-
-    def applyChange(change: Change): Future[Commit] = Future {
-      refactorer.apply(change)
-    }
-
 
     def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
       var result: Option[Result]  = None
@@ -279,10 +255,10 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
 
     val optimized = for {
-      source   <- collectSource
+      source   <- collectSource(optimize.source)
       request  <- createRequest(source)
-      change   <- createChange(request)
-      commit   <- applyChange(change)
+      change   <- createChange(refactorer, request)
+      commit   <- applyChange(refactorer, change)
       result   <- produceResult(change, commit)
     } yield {
       result
@@ -293,20 +269,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   private def evalFormat(refactorer: Refactorer, format: Format): Future[Option[Result]] = {
 
-    val collectSource: Future[Source] = Future {
-      asSource(format.source)
-    }
-
     def createRequest(source: Source): Future[ChangeRequest] = Future {
       ChangeRequest.reformatSource(source)
-    }
-
-    def createChange(request: ChangeRequest): Future[Change] = Future {
-      refactorer.createChange(request)
-    }
-
-    def applyChange(change: Change): Future[Commit] = Future {
-      refactorer.apply(change)
     }
 
     def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
@@ -319,12 +283,11 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       result
     }
 
-
     val reformatted = for {
-      source   <- collectSource
+      source   <- collectSource(format.source)
       request  <- createRequest(source)
-      change   <- createChange(request)
-      commit   <- applyChange(change)
+      change   <- createChange(refactorer, request)
+      commit   <- applyChange(refactorer, change)
       result   <- produceResult(change, commit)
     } yield {
       result
@@ -334,10 +297,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   }
 
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
-
-    def collectSource: Future[Source] = Future {
-      asSource(cleanup.source)
-    }
 
     def detectIssues(source: Source): mutable.Set[Issue] = {
       val result:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(source))
@@ -392,11 +351,10 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
 
     val cleanedUp = for {
-      source  <- collectSource
+      source  <- collectSource(cleanup.source)
       commits <- batchChanges(source)
       result  <- produceResult(source, commits)
     } yield {
-      println(result)
       result
     }
 
@@ -404,15 +362,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   }
 
   private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Future[Option[Result]] = {
-
-
-    val collectSource: Future[Source] = Future {
-      asSource(deduplicate.source)
-    }
-
-    def collectIssues(vesperSource: Source): Future[mutable.Set[Issue]] = Future {
-      asScalaSet(refactorer.detectIssues(vesperSource))
-    }
 
     def filterNonDeduplicateIssues(issues:mutable.Set[Issue]): Future[mutable.Set[Issue]] = Future {
        issues.filter(i => Names.hasAvailableResponse(i.getName) && Names.from(i.getName).isSame(Refactoring.DEDUPLICATE))
@@ -437,7 +386,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       for(c <- commits){
         c != null && c.isValidCommit match {
           case true   =>  result = Some(Result(draft = Some(asDraft(c))))
-          case false  =>  println("useless commit")
+          case false  =>  result = Some(Result(failure = Some(Failure("invalid commit"))))
         }
       }
 
@@ -445,8 +394,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
 
     val deduplicated = for {
-      source   <- collectSource
-      issues   <- collectIssues(source)
+      source   <- collectSource(deduplicate.source)
+      issues   <- collectIssues(refactorer, source)
       fIssues  <- filterNonDeduplicateIssues(issues)
       changes  <- applyChanges(fIssues)
       result   <- produceResult(changes)
@@ -475,53 +424,10 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
-    val theCode: Code = persist.source
-    println(who.userId + " is persisting " + theCode.name + "\n")
-
-    storage.persist(theCode)
+    storage.persist(persist.source)
   }
 
-
-  private def evalPublish(who:Auth, publish: Publish): Future[Option[Result]] = {
-    try {
-
-      val published = Promise[Option[Result]]()
-
-      val publishCode = Future {
-        val commitHistory: CommitHistory = new CommitHistory()
-
-        for(d <- publish.drafts){
-          commitHistory.add(asCommit(who.userId, d))
-        }
-
-        val p: CommitPublisher = new CommitPublisher(
-          commitHistory,
-          new Credential(who.userId, who.token)
-        )
-
-        var result: Option[Result]   = None
-        val commits:mutable.Buffer[Commit]  = asScalaBuffer(p.publish())
-        val commit: Commit                  = commits.last
-
-        commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
-          case false => result = Some(Result(failure = Some(Failure("Unable to publish commit"))))
-        }
-
-        result
-      }
-
-      publishCode.onComplete { tr =>
-        published.complete(tr)
-      }
-
-      published.future
-    } catch {
-      case e: Exception => Future(Some(Result(failure = Some(Failure(e.getMessage)))))
-    }
-  }
-
-  private def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
+  private[core] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
 
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
@@ -530,8 +436,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     val what: Role              = membership.role
 
     val environment: Refactorer = Vesper.createRefactorer()
-
-    println(who.userId + " is curating at " + DateTime.now + "\n")
 
     val answer = flatten(command)
 
@@ -543,7 +447,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       case format:Format            => evalFormat(environment, format)
       case deduplicate:Deduplicate  => evalDeduplicate(environment, deduplicate)
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
-      case publish:Publish          => evalPublish(who, publish)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
       case _                        => unknownCommand()
