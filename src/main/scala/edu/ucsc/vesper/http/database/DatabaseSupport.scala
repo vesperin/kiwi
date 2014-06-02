@@ -26,21 +26,22 @@ trait DatabaseSupport extends ReactiveMongoPersistence {
       val driver = new MongoDriver
 
       url match {
-        case Some(regex(user, password, host, port, collectionName)) =>
+        case Some(regex(user, password, host, port, databaseName)) =>
           val connection     = driver.connection(List("%s:%s".format(host, port)))
-          connection.authenticate(collectionName, user, password)
+          connection.authenticate(databaseName, user, password)
           Some(connection)
         case None =>
           val localConnection = driver.connection(List("%s:%s".format(dbHost, dbPort)))
           localConnection.authenticate(dbName, dbUser, dbPassword)
-          Some(driver.connection(List("localhost")))
+          Some(localConnection)
       }
     }
   }
 
   val ConnectionMaker(connection) = Properties.envOrNone("MONGOHQ_URL")
   // Gets a reference to the database 'codesnippets'
-  val db =  connection("codesnippets")(Main.system.dispatcher)
+  val db =  connection("vesper")(Main.system.dispatcher)
+
 
   // Json mapping to / from BSON - in this case we want "_id" from BSON to be
   // mapped to "id" in JSON in all cases
@@ -63,7 +64,7 @@ trait DatabaseSupport extends ReactiveMongoPersistence {
   }
 
   // MongoDB collections:
-  object Sources extends UnsecuredDAO[Code]("codesnippets") with UUIDStringId
+  object Sources extends UnsecuredDAO[Code]("sources") with UUIDStringId
 }
 
 object DatabaseSupport extends DatabaseSupport

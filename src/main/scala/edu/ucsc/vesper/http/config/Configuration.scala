@@ -43,12 +43,11 @@ trait Configuration {
   lazy val dbPort = Try(config.getInt("db.port")).getOrElse(27017)
 
   /** Service database name. */
-  lazy val dbName = Try(config.getString("db.name")).getOrElse("codesnippets")
+  lazy val dbName = Try(config.getString("db.name")).getOrElse("vesper")
 
   /** User name used to access database. */
   lazy val dbUser = Try(config.getString("db.user")).toOption.orNull
 
   /** Password for specified user and database. */
   lazy val dbPassword = Try(config.getString("db.password")).toOption.orNull
-
 }
