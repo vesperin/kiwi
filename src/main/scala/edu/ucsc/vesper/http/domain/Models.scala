@@ -34,9 +34,6 @@ object Models {
       /** a piece of text describing this source code **/
       , description: String
 
-      /** the current version of this source code **/
-      , version: Option[String]  = None
-
       /** the current content of this Source **/
       , content: String
 
@@ -125,7 +122,7 @@ object Models {
   }
 
   object Code extends ModelCompanion[Code, String] {
-    implicit val codeFormats = jsonFormat9(Code.apply _)
+    implicit val codeFormats = jsonFormat8(Code.apply _)
   }
 
   object Draft extends DefaultJsonProtocol with SprayJsonSupport {

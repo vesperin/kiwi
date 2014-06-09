@@ -46,7 +46,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
   val vesper =
     path("vesper"){
       authenticate(vesperin) { membership =>
-        post {
+        (post | put) {
           authorize(isCurator(membership)){
             entity(as[Command]) {
               command =>

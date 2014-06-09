@@ -2,7 +2,6 @@ package edu.ucsc.vesper.http.database
 
 import reactivemongo.api.{MongoDriver, MongoConnection}
 import scala.util.Properties
-import edu.ucsc.vesper.http.Main
 import sprest.models.{UUIDStringId, UniqueSelector}
 import scala.concurrent.ExecutionContext
 import reactivemongo.bson.BSONDocument
@@ -13,6 +12,7 @@ import sprest.Formats._
 import spray.json.RootJsonFormat
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models.Code
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /**
@@ -40,7 +40,7 @@ trait DatabaseSupport extends ReactiveMongoPersistence {
 
   val ConnectionMaker(connection) = Properties.envOrNone("MONGOHQ_URL")
   // Gets a reference to the database 'codesnippets'
-  val db =  connection("vesper")(Main.system.dispatcher)
+  val db =  connection("vesper")
 
 
   // Json mapping to / from BSON - in this case we want "_id" from BSON to be

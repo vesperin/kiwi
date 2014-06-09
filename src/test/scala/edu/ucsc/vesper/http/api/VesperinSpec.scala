@@ -6,6 +6,7 @@ import spray.http.{StatusCodes, HttpEntity, MediaTypes}
 import edu.ucsc.vesper.http.domain.Models._
 import scala.concurrent.duration._
 import spray.http.HttpHeaders.RawHeader
+import java.util.Date
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -217,6 +218,23 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         addHeader(RawHeader("x-auth-token", "mal")) ~>
         sealRoute(vesperRoutes) ~> check {
         status === StatusCodes.Unauthorized
+      }
+
+    }
+
+    "return Code snippet was saved! on a put request and perform a database insert " in {
+      Put("/api/vesper", Command(persist = Some(Persist(
+        Code(
+          name = "Name.java",
+          description = "Represents a generic Name object",
+          content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}",
+          tags = List("Example", "Boom functionality", "Dont use"),
+          url = Some("http://www.badstuff.com"),
+          birthday = Some(new Date().getTime),
+          comments = List(Comment(from = "1;1;0", to = "2;10;234", text = "Very useless class"))))))) ~>
+        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Result] mustEqual Result(info = Some(Info(List("Name.java was saved!"))))
       }
 
     }
