@@ -4,7 +4,7 @@ import com.typesafe.config.{ConfigValue, ConfigFactory}
 import java.util
 import java.util.Map.Entry
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Properties, Try}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -44,6 +44,17 @@ trait Configuration {
 
   /** Service database name. */
   lazy val dbName = Try(config.getString("db.name")).getOrElse("vesper")
+
+  val mongoHQRegEx  = """mongodb://(\w+):([\w|-]+)@([\w|\.]+):(\d+)/(\w+)""".r
+
+  lazy val remoteDatabase: String = Properties.envOrNone("MONGOHQ_URL") match {
+    case Some(x) => x match {
+      case mongoHQRegEx(user, password, host, port, databaseName) => databaseName
+      case _ => dbName
+    }
+
+    case None    => dbName
+  }
 
   /** User name used to access database. */
   lazy val dbUser = Try(config.getString("db.user")).toOption.orNull

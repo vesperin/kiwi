@@ -242,13 +242,12 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result] mustEqual Result(info = Some(Info(List("GCD.java was saved!"))))
       }
+    }
 
-      "return a Code Result Set for GET request to the root path" in {
-        Get("/api/vesper?c=tags%3AAlgorithms+%27Cracking+code+interview%27") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
-          responseAs[Result].sources.size mustEqual 1
-        }
-      }.after(cleanupDatabase)
-
+    "return a Code Result Set for GET request to the root path" in {
+      Get("/api/vesper?c=tags:Algorithms+%27Cracking+code+interview%27") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+        responseAs[Result].sources.get.nonEmpty mustEqual true
+      }
     }
   }
 

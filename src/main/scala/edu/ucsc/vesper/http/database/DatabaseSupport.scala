@@ -19,14 +19,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  *
  */
-trait DatabaseSupport extends ReactiveMongoPersistence {
+trait DatabaseSupport extends ReactiveMongoPersistence with Configuration {
   object ConnectionMaker extends Configuration {
     def unapply(url: Option[String]): Option[MongoConnection] = {
-      val regex  = """mongodb://(\w+):(\w+)@([\w|\.]+):(\d+)/(\w+)""".r
       val driver = new MongoDriver
 
       url match {
-        case Some(regex(user, password, host, port, databaseName)) =>
+        case Some(mongoHQRegEx(user, password, host, port, databaseName)) =>
           val connection     = driver.connection(List("%s:%s".format(host, port)))
           connection.authenticate(databaseName, user, password)
           Some(connection)
@@ -40,7 +39,8 @@ trait DatabaseSupport extends ReactiveMongoPersistence {
 
   val ConnectionMaker(connection) = Properties.envOrNone("MONGOHQ_URL")
   // Gets a reference to the database 'codesnippets'
-  val db =  connection("vesper")
+  println("The database is " + remoteDatabase + " \n")
+  val db = connection(remoteDatabase)
 
 
   // Json mapping to / from BSON - in this case we want "_id" from BSON to be
