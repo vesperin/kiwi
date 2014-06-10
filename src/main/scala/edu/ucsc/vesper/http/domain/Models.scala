@@ -31,23 +31,44 @@ object Models {
       /** the name of the source code (e.g., filename) **/
       name: String
 
-      /** a piece of text describing this source code **/
+      /** a piece of text describing this source code; i.e., the synopsis **/
       , description: String
 
       /** the current content of this Source **/
       , content: String
 
-      /** tags or labels categorizing this source code **/
-      , tags: List[String]       = List()
+      /**
+       * tags or labels categorizing this source code. This
+       * information gives the context of source code; e.g., Cracking code interview.
+       */
+      , tags: List[String]            = List()
+
+      /** a sub-category indicating the data structures used in this source code **/
+      , datastructures: List[String]  = List()
+
+      /** a sub-category indicating the algorithms used is this source code **/
+      , algorithms: List[String]      = List()
+
+      /**
+       * The unique refactorings that were used that led to this transformed source code.
+       * This may give us some insight of what was on the programmer's mind when changing
+       * this source code.
+       */
+      , refactorings: List[String]    = List()
+
+      /**
+       * Level of confidence with respect to the quality of the final result (source code); e.g., stars?
+       */
+      , confidence: Int               = 0
 
       /** the url where this Source was found **/
-      , url: Option[String]      = None
+      , url: Option[String]           = None
 
       /** The date when this source code was found **/
-      , birthday: Option[Long]   = None
+      , birthday: Option[Long]        = None
 
       /** comments describing this source code. **/
-      , comments: List[Comment]  = List()
+      , comments: List[Comment]       = List()
 
       /** the code unique id **/
       , var id: Option[String]   = None
@@ -75,16 +96,17 @@ object Models {
   case class Persist(source: Code)
 
   // Find(any: Option[], all: Option[] ...
-  case class Any(name: String, targets: List[String])
-  case class Exact(name: String, value: String)
-  case class ExactlyAll(name: String, targets: List[String])
-  case class All(symbol: String = "*")
+  case class AnyInSet(name: String, targets: List[String])
+  case class ExactlyOne(name: String, value: String)
+  case class ExactlyAllInSet(name: String, targets: List[String])
+  case class AllInSet(symbol: String = "*")
+  case class ExactRole(value: String)
   case class Find(
-        all: Option[All]              = None,
-        any: Option[Any]              = None,
-        exact: Option[Exact]          = None,
-        exactlyAll:Option[ExactlyAll] = None,
-        roles: Option[String]         = None
+        all: Option[AllInSet]               = None,
+        any: Option[AnyInSet]               = None,
+        exact: Option[ExactlyOne]           = None,
+        exactlyAll:Option[ExactlyAllInSet]  = None,
+        roles: Option[ExactRole]            = None
   )
 
   case class Warning(name: String, description: String, where: Option[List[Int]])
@@ -122,7 +144,7 @@ object Models {
   }
 
   object Code extends ModelCompanion[Code, String] {
-    implicit val codeFormats = jsonFormat8(Code.apply _)
+    implicit val codeFormats = jsonFormat12(Code.apply)
   }
 
   object Draft extends DefaultJsonProtocol with SprayJsonSupport {
@@ -161,20 +183,24 @@ object Models {
     implicit val publishFormats = jsonFormat1(Publish.apply)
   }
 
-  object All extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val allFormat = jsonFormat1(All.apply)
+  object AllInSet extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val allFormat = jsonFormat1(AllInSet.apply)
   }
 
-  object Any extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val anyFormat = jsonFormat2(Any.apply)
+  object AnyInSet extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val anyFormat = jsonFormat2(AnyInSet.apply)
   }
 
-  object Exact extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val exactFormat = jsonFormat2(Exact.apply)
+  object ExactlyOne extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val exactFormat = jsonFormat2(ExactlyOne.apply)
   }
 
-  object ExactlyAll extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val exactlyAllFormat = jsonFormat2(ExactlyAll.apply)
+  object ExactRole extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val exactRoleFormat = jsonFormat1(ExactRole.apply)
+  }
+
+  object ExactlyAllInSet extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val exactlyAllFormat = jsonFormat2(ExactlyAllInSet.apply)
   }
 
   object Find extends DefaultJsonProtocol with SprayJsonSupport {

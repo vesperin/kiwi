@@ -1,7 +1,6 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.vesper.http.domain.Models._
-import scala.Some
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -21,11 +20,11 @@ trait Parser {
 
   private def parse(command: String, args: List[String]): Command =
     command match {
-      case "all"     => Command(find = Some(Find(all    = Some(All()))))
-      case "name"    => Command(find = Some(Find(exact  = Some(Exact(command, args(0))))))
-      case "tags"    => Command(find = Some(Find(any    = Some(Any(command, args)))))
-      case "url"     => Command(find = Some(Find(exact  = Some(Exact(command, args(0))))))
-      case "roles"   => Command(find = Some(Find(roles  = Some(args(0)))))
+      case "all"     => Command(find = Some(Find(all    = Some(AllInSet()))))
+      case "name"    => Command(find = Some(Find(exact  = Some(ExactlyOne(command, args(0))))))
+      case "tags"    => Command(find = Some(Find(any    = Some(AnyInSet(command, args)))))
+      case "url"     => Command(find = Some(Find(exact  = Some(ExactlyOne(command, args(0))))))
+      case "roles"   => Command(find = Some(Find(roles  = Some(ExactRole(args(0))))))
       case `command` => Command()
     }
 

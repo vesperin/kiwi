@@ -1,15 +1,13 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
+import edu.ucsc.refactor.spi._
+import edu.ucsc.refactor.util.Commit
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models._
-import scala.collection.mutable
-import edu.ucsc.refactor.util.Commit
-import edu.ucsc.refactor.spi._
-import scala.Some
-import edu.ucsc.vesper.http.domain.Models.Auth
-import edu.ucsc.vesper.http.domain.Models.Role
+
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -25,14 +23,14 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   val Curator     = 0
   val Reviewer    = 1
 
-  private def emitRoles(who:Role, question:String): Future[Option[Result]] = {
+  private def emitRoles(who:Role, question:ExactRole): Future[Option[Result]] = {
     def f(x: Int): Boolean = if(x == Reviewer) true else false
     def g(x: Int): Boolean = if(x == Curator)  true else false
 
 
     val askQuestion: Future[mutable.Buffer[String]] = Future {
       var result: mutable.Buffer[String] = mutable.Buffer.empty[String]
-      question  match {
+      question.value  match {
         case "curators"   => result ++ club.filter {case (k,v) => g(v)}.keySet.toList
         case "reviewers"  => result ++ club.filter {case (k,v) => f(v)}.keySet.toList
         case "everybody"  => result ++ passwords.keySet.toList
@@ -101,7 +99,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     try {
 
       def produceResult (warnings: mutable.Seq[Warning]): Future[Option[Result]] = {
-        if(!warnings.isEmpty){
+        if(warnings.nonEmpty){
           Future{Some(Result(warnings = Some(warnings.toList)))}
         } else {
           var messages:mutable.Buffer[String]  = mutable.Buffer.empty[String]
@@ -316,7 +314,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
       Q += source
 
-      while(!Q.isEmpty){
+      while(Q.nonEmpty){
         val src: Source = Q.dequeue()
 
         val issues: mutable.Set[Issue] = detectIssues(src).filter(
@@ -413,12 +411,12 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     val answer = flatten(find)
 
     answer match {
-      case role: String           => emitRoles(who, role)
-      case all: All               => storage.findAll()
-      case any: Any               => storage.find(any)
-      case exact: Exact           => storage.find(exact)
-      case exactlyAll: ExactlyAll => storage.find(exactlyAll)
-      case _                      => Future(Some(Result(failure = Some(Failure("Unknown command")))))
+      case role: ExactRole              => emitRoles(who, role)
+      case all: AllInSet                => storage.findAll()
+      case any: AnyInSet                => storage.find(any)
+      case exact: ExactlyOne            => storage.find(exact)
+      case exactlyAll: ExactlyAllInSet  => storage.find(exactlyAll)
+      case _                            => Future(Some(Result(failure = Some(Failure("Unknown command")))))
     }
   }
 

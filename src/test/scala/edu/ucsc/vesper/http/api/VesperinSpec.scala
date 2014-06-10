@@ -17,6 +17,8 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   // reason of this addition? see https://groups.google.com/forum/#!msg/spray-user/o8DtI6VUMbA/n9tguTb_1noJ
   implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
+  def cleanupDatabase = interpreter.storage.clear()
+
   "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/api/help") ~> vesperRoutes ~> check {
@@ -49,7 +51,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return an inspect request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags": [], "comments":[]} }}""" )) ~>
+      Post("/api/vesper", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags": [], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
 
@@ -97,7 +99,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
 
     "return a rename class request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper", HttpEntity(MediaTypes.`application/json`, """{"rename": { "what": "class", "where":[6, 15], "to": "Preconditions", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper", HttpEntity(MediaTypes.`application/json`, """{"rename": { "what": "class", "where":[6, 15], "to": "Preconditions", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
 
@@ -108,7 +110,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a remove method request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"remove": { "what": "method", "where":[17, 45], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"remove": { "what": "method", "where":[17, 45], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
         responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {}")
@@ -142,7 +144,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return an optimize imports request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"optimize": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"optimize": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}")
         responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
@@ -166,7 +168,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a formatting request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"format": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"format": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
         responseAs[Result].draft.get.after  mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n\tvoid inject(Object object) {\n\t}\n}")
@@ -182,10 +184,10 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a deduplicate request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
-        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
+        responseAs[Result].draft.get.before mustEqual Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
       }
     }
 
@@ -199,7 +201,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     }
 
     "return a cleanup request in JSON form for POST requests to the root path" in {
-      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "comments":[]} }}""" )) ~>
+      Post("/api/vesper?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
         responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n" + "\t/** {@link Name#boom(String)} **/\n" + "\tvoid boom() {\n" + "\t\tSystem.out.println(1);\n" + "\t}\n" + "\n" + "\tvoid buum() {\n" + "\t\tboom();\n" + "\t}\n" + "}")
@@ -225,17 +227,27 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     "return Code snippet was saved! on a put request and perform a database insert " in {
       Put("/api/vesper", Command(persist = Some(Persist(
         Code(
-          name = "Name.java",
-          description = "Represents a generic Name object",
-          content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}",
-          tags = List("Example", "Boom functionality", "Dont use"),
-          url = Some("http://www.badstuff.com"),
-          birthday = Some(new Date().getTime),
-          comments = List(Comment(from = "1;1;0", to = "2;10;234", text = "Very useless class"))))))) ~>
+          name = "GCD.java",
+          description     = "The greatest common divisor (GCD) of two or more non-zero integers, is the largest positive integer that divides the numbers without a remainder.",
+          content         = "class GCD {\t\t\n\t\tstatic int computeGcd(int a, int b){\n\t\t return BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).intValue(); \n\t\t}\n}",
+          tags            = List("Cracking the code interview", "Algorithms"),
+          datastructures  = List("BigInteger"),
+          algorithms      = List("Greatest Common Divisor"),
+          refactorings    = List("Rename method"),
+          confidence      = 2,
+          url             = Some("http://www.programmingtask.com"),
+          birthday        = Some(new Date().getTime),
+          comments        = List(Comment(from = "1;1;0", to = "2;10;234", text = "BigInteger's gcd seems very expensive"))))))) ~>
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
-        responseAs[Result] mustEqual Result(info = Some(Info(List("Name.java was saved!"))))
+        responseAs[Result] mustEqual Result(info = Some(Info(List("GCD.java was saved!"))))
       }
+
+      "return a Code Result Set for GET request to the root path" in {
+        Get("/api/vesper?c=tags%3AAlgorithms+%27Cracking+code+interview%27") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+          responseAs[Result].sources.size mustEqual 1
+        }
+      }.after(cleanupDatabase)
 
     }
   }
