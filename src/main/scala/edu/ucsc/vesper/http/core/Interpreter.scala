@@ -1,6 +1,7 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
+import edu.ucsc.refactor.internal.{CompilationProblemException, EclipseJavaParser}
 import edu.ucsc.refactor.spi._
 import edu.ucsc.refactor.util.Commit
 import edu.ucsc.vesper.http.config.Configuration
@@ -77,15 +78,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     asScalaSet(refactorer.detectIssues(source))
   }
 
-  private[core] def collectWarnings(vesperSource: Source, issues: mutable.Set[Issue]): Future[mutable.Buffer[Warning]] = Future {
-    var warnings:mutable.Buffer[Warning]  = mutable.Buffer.empty[Warning]
-    for(i <- issues){
-      warnings += asWarning(vesperSource, i)
-    }
-
-    warnings
-  }
-
 
   private[core] def createChange(refactorer: Refactorer, request: ChangeRequest): Future[Change] = Future {
     refactorer.createChange(request)
@@ -98,21 +90,29 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
 
-      def produceResult (warnings: mutable.Seq[Warning]): Future[Option[Result]] = {
-        if(warnings.nonEmpty){
-          Future{Some(Result(warnings = Some(warnings.toList)))}
-        } else {
-          var messages:mutable.Buffer[String]  = mutable.Buffer.empty[String]
-          messages += "It looks clear!"
-          Future{Some(Result(info = Some(Info(messages.toList))))}
+      def createContext(source: Source): Future[Context] = {
+        Future(new Context(source))
+      }
+
+      def compileContext(context: Context): Future [Option[Result]] = {
+        try {
+          val parser: JavaParser = new EclipseJavaParser
+          parser.parseJava(context)
+          Future(Some(Result(warnings = Some(List()))))
+        } catch {
+          case e: RuntimeException =>
+            e.getCause match {
+              case cpe: CompilationProblemException =>
+                Future(Some(Result(warnings = Some(List(Warning(cpe.getMessage))))))
+              case _ => Future(Some(Result(warnings = Some(List(Warning(e.getMessage))))))
+            }
         }
       }
 
       val inspected = for {
         vesperSource  <- collectSource(inspect.source)
-        issues        <- collectIssues(refactorer, vesperSource)
-        warnings      <- collectWarnings(vesperSource, issues)
-        result        <- produceResult(warnings)
+        context       <- createContext(vesperSource)
+        result        <- compileContext(context)
       } yield {
         result
       }

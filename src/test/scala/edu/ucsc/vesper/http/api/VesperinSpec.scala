@@ -55,25 +55,25 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         addHeader(RawHeader("x-auth-token", "legolas")) ~>
         sealRoute(vesperRoutes) ~> check {
 
-        val answers = List(
-          Result(warnings = Some(List(Warning("object", "Unused parameter", Some(List(29, 42))), Warning("inject", "Unused method", Some(List(17, 45)))))),
-          Result(warnings = Some(List(Warning("inject", "Unused method", Some(List(17, 45))), Warning("object", "Unused parameter", Some(List(29, 42))))))
-        )
-
-        answers.contains(responseAs[Result])
+        responseAs[Result] mustEqual Result(warnings = Some(List()))
       }
     }
+
+    "return an inspect request with Syntax Error in JSON form for POST requests to the root path" in {
+      Post("/api/vesper", HttpEntity(MediaTypes.`application/json`, """{"inspect": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject bject object){}}", "tags": [], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
+        addHeader(RawHeader("x-auth-token", "legolas")) ~>
+        sealRoute(vesperRoutes) ~> check {
+
+        responseAs[Result] mustEqual Result(warnings = Some(List(Warning("Java compilation errors:\n\n1) Error at Syntax error on token \"inject\", ( expected after this token:\n Syntax error on token \"inject\", ( expected after this token\n\n1 error[s]"))))
+      }
+    }
+
 
     "return an inspect request for POST requests to the root path" in {
       Post("/api/vesper?auth_token=legolas", Command(inspect = Some(Inspect(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
 
-        val answers = List(
-          Result(warnings = Some(List(Warning("object", "Unused parameter", Some(List(29, 42))), Warning("inject", "Unused method", Some(List(17, 45)))))),
-          Result(warnings = Some(List(Warning("inject", "Unused method", Some(List(17, 45))), Warning("object", "Unused parameter", Some(List(29, 42))))))
-        )
-
-        answers.contains(responseAs[Result])
+        responseAs[Result] mustEqual Result(warnings = Some(List()))
       }
     }
 

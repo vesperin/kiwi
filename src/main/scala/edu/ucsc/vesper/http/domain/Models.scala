@@ -109,7 +109,7 @@ object Models {
         roles: Option[ExactRole]            = None
   )
 
-  case class Warning(name: String, description: String, where: Option[List[Int]])
+  case class Warning(message: String)
   case class Failure(message: String)
   case class Info(messages: List[String])
 
@@ -212,7 +212,7 @@ object Models {
   }
 
   object Warning extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val failureFormats = jsonFormat3(Warning.apply)
+    implicit val failureFormats = jsonFormat1(Warning.apply)
   }
 
   object Failure extends DefaultJsonProtocol with SprayJsonSupport {

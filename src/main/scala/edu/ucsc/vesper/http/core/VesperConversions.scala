@@ -132,37 +132,6 @@ trait VesperConversions {
     )
   }
 
-  def asWarning(source: Source, each: Issue): Warning = {
-    var marks:mutable.Buffer[Int]         = mutable.Buffer.empty[Int]
-    val nodes:java.util.List[ASTNode]     = each.getAffectedNodes
-    val nitr:java.util.Iterator[ASTNode]  = nodes.iterator()
-
-    var names: mutable.Buffer[String] = mutable.Buffer.empty[String]
-    while(nitr.hasNext){
-      val node: ASTNode = nitr.next
-      if(nodes.size() > 1){
-        if(!node.isInstanceOf[MethodDeclaration]){
-          names += getSimpleName(node)
-          val loc: Location = Locations.locate(source, node)
-          marks += loc.getStart.getOffset
-          marks += loc.getEnd.getOffset
-        }
-      } else {
-        val loc: Location = Locations.locate(source, node)
-        marks += loc.getStart.getOffset
-        marks += loc.getEnd.getOffset
-        names += getSimpleName(node)
-      }
-    }
-
-    Warning(
-      names.mkString(","),
-      each.getName.getKey,
-      Some(marks.toList)
-    )
-
-  }
-
   private def getSimpleName(astNode: ASTNode): String = {
     astNode match {
       case method: MethodDeclaration =>
