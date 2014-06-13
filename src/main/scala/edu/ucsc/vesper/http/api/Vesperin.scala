@@ -52,8 +52,8 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
-  val vesper =
-    path("vesper"){
+  val eval =
+    path("eval"){
       authenticate(vesperin) { membership =>
         (post | put) {
           authorize(isCurator(membership)){
@@ -66,13 +66,19 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
                 }
             }
           }
-        } ~
+        } 
+      }
+    }
+
+  val find =
+    path("find") {
+      authenticate(vesperin) { membership =>
         get {
           authorize(isReviewer(membership)){
-            parameter('c){
-              c =>
+            parameter('q){
+              q =>
                 detach(){
-                  onComplete(interpreter.eval(membership, c)){
+                  onComplete(interpreter.eval(membership, q)){
                     case result => complete(result)
                   }
                 }
@@ -83,7 +89,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
     }
 
   val vesperRoutes =
-    pathPrefix("api") {
-      describe ~ vesper
+    pathPrefix("vesper") {
+      describe ~ eval ~ find
     }
 }
