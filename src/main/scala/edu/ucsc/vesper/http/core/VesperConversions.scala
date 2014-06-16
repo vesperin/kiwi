@@ -1,12 +1,14 @@
 package edu.ucsc.vesper.http.core
 
-import edu.ucsc.refactor.{Location, Issue, Note, Source}
-import edu.ucsc.vesper.http.domain.Models.{Warning, Draft, Comment, Code}
-import scala.collection.mutable
-import edu.ucsc.refactor.util.{SourceFormatter, Locations, Commit}
-import edu.ucsc.refactor.spi.{CommitSummary, Refactoring, Name}
 import java.util.Date
-import org.eclipse.jdt.core.dom.{VariableDeclaration, SimpleName, MethodDeclaration, ASTNode}
+
+import edu.ucsc.refactor.Source
+import edu.ucsc.refactor.spi.{CommitSummary, Name, Refactoring}
+import edu.ucsc.refactor.util.{Commit, Note, SourceFormatter}
+import edu.ucsc.vesper.http.domain.Models.{Code, Comment, Draft}
+import org.eclipse.jdt.core.dom.{ASTNode, MethodDeclaration, SimpleName, VariableDeclaration}
+
+import scala.collection.mutable
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
