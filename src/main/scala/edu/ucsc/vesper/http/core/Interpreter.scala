@@ -1,7 +1,6 @@
 package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
-import edu.ucsc.refactor.internal.{CompilationProblemException, EclipseJavaParser}
 import edu.ucsc.refactor.spi._
 import edu.ucsc.refactor.util.Commit
 import edu.ucsc.vesper.http.config.Configuration
@@ -75,7 +74,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   }
 
   private[core] def collectIssues(refactorer: Refactorer, source: Source): Future[mutable.Set[Issue]] = Future {
-    asScalaSet(refactorer.detectIssues(source))
+    val introspector: Introspector = refactorer.getIntrospector(source)
+    asScalaSet(introspector.detectIssues())
   }
 
 
@@ -90,29 +90,25 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
 
-      def createContext(source: Source): Future[Context] = {
-        Future(new Context(source))
-      }
-
-      def compileContext(context: Context): Future [Option[Result]] = {
+      def verifySource(source: Source): Future [Option[Result]] = {
         try {
-          val parser: JavaParser = new EclipseJavaParser
-          parser.parseJava(context)
-          Future(Some(Result(warnings = Some(List()))))
+          val introspector: Introspector      = refactorer.getIntrospector
+          val problems: Seq[String]           = asScalaBuffer(introspector.verifySource(source))
+          val result: Future [Option[Result]] = if(problems.isEmpty) Future(Some(Result(warnings = Some(List())))) else {
+
+            val warnings = problems.map(x => Warning(x))
+            Future(Some(Result(warnings = Some(warnings.toList))))
+          }
+          result
         } catch {
           case e: RuntimeException =>
-            e.getCause match {
-              case cpe: CompilationProblemException =>
-                Future(Some(Result(warnings = Some(List(Warning(cpe.getMessage))))))
-              case _ => Future(Some(Result(warnings = Some(List(Warning(e.getMessage))))))
-            }
+            Future(Some(Result(warnings = Some(List(Warning(e.getMessage))))))
         }
       }
 
       val inspected = for {
         vesperSource  <- collectSource(inspect.source)
-        context       <- createContext(vesperSource)
-        result        <- compileContext(context)
+        result        <- verifySource(vesperSource)
       } yield {
         result
       }
@@ -297,7 +293,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
 
     def detectIssues(source: Source): mutable.Set[Issue] = {
-      val result:mutable.Set[Issue] = asScalaSet(refactorer.detectIssues(source))
+      val introspector: Introspector = refactorer.getIntrospector(source)
+      val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues())
       result
     }
 
