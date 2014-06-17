@@ -293,14 +293,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
     def detectIssues(source: Source): mutable.Set[Issue] = {
       val introspector: Introspector = refactorer.getIntrospector(source)
-      try {
-        val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues())
-        result
-      } catch {
-        // HACK catch the false positives
-        // todo(Huascar) fix vesper; it is giving false positive results
-        case e: RuntimeException => mutable.Set()
-      }
+      val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues())
+      result
     }
 
     def createCommit(issue: Issue): Commit = {
@@ -337,14 +331,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
 
     def produceResult(vesperSource: Source, stack:mutable.Stack[Commit]): Future[Option[Result]] = Future {
-      if(stack.isEmpty)
-        Some(Result(draft = Some(
-          Draft("Full cleanup", "Reformatted code and also removed code redundancies",
-            System.nanoTime(),
-            asCode(vesperSource),
-            asCode(vesperSource)
-          ))))
-      else {
         Some(
           Result(
             draft = Some(
@@ -356,8 +342,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
             )
           )
         )
-
-      }
     }
 
     val cleanedUp = for {
