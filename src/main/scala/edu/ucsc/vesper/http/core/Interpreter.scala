@@ -331,6 +331,18 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
 
     def produceResult(vesperSource: Source, stack:mutable.Stack[Commit]): Future[Option[Result]] = Future {
+      if(stack.isEmpty)
+        Some(
+          Result(
+            draft = Some(
+              asFormatterDraft(
+                vesperSource,
+                "Full cleanup",
+                "Reformatted code and also removed code redundancies"
+              )
+            )
+          ))
+      else {
         Some(
           Result(
             draft = Some(
@@ -342,6 +354,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
             )
           )
         )
+
+      }
     }
 
     val cleanedUp = for {

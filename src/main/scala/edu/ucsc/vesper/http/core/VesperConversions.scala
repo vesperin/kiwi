@@ -83,6 +83,18 @@ trait VesperConversions {
   }
 
 
+  def asFormatterDraft(source: Source, cause: String, description: String): Draft = {
+    val formattedContent: String  = new SourceFormatter().format(source.getContents)
+
+    Draft(
+      cause,
+      description,
+      System.nanoTime(),
+      asCode(source),
+      asCode(Source.from(source, formattedContent))
+    )
+  }
+
   def asFormattedDraft(commit: Commit, cause: String, description: String): Draft = {
     val src: Source               = commit.getSourceAfterChange
     val formattedContent: String  = new SourceFormatter().format(src.getContents)
