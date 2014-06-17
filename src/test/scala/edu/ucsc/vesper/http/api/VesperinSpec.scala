@@ -155,7 +155,6 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
-
     "return a cleanup request for POST requests to the root path" in {
       Post("/vesper/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
