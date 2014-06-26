@@ -13,9 +13,7 @@ private[core] trait Storage {
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
-  def persist(code: Code): Future[Option[Result]] = Sources.add(code).flatMap {
-    theCode => Future(Some(Result(info = Some(Info(List("%s was saved!".format(theCode.name)))))))
-  }
+  def persist(code: Code): Future[Code] = Sources.add(code)
 
   def find(doc: BSONDocument): Future[Option[Result]] = Sources.find(doc).flatMap {
     codes => Future(Some(Result(sources = Some(codes))))
@@ -28,6 +26,11 @@ private[core] trait Storage {
   def find(exact: ExactlyOne): Future[Option[Result]] = find(BSONDocument(exact.name → exact.value))
 
   def find(exactlyAll: ExactlyAllInSet): Future[Option[Result]] = find(BSONDocument(exactlyAll.name → BSONDocument("$all" → exactlyAll.targets)))
+
+  def findById(byId: ById): Future[Option[Result]] = Sources.findById(byId.value).flatMap {
+    case Some(x) => Future(Some(Result(sources = Some(List(x)))))
+    case None => Future(Some(Result(sources = Some(List()))))
+  }
 
   def clear(): Future[Option[Result]] = Sources.removeAll().flatMap {
     lastError => Future(Some(Result(failure = Some(Failure(lastError.errMsg.get)))))

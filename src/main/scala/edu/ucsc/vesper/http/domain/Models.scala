@@ -95,17 +95,22 @@ object Models {
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Persist(source: Code)
 
+  case class Body(kind: String, id: String, longUrl: String)
+  case class LongURL(longUrl: String)
+
   // Find(any: Option[], all: Option[] ...
   case class AnyInSet(name: String, targets: List[String])
   case class ExactlyOne(name: String, value: String)
   case class ExactlyAllInSet(name: String, targets: List[String])
   case class AllInSet(symbol: String = "*")
   case class ExactRole(value: String)
+  case class ById(value: String)
   case class Find(
         all: Option[AllInSet]               = None,
         any: Option[AnyInSet]               = None,
         exact: Option[ExactlyOne]           = None,
         exactlyAll:Option[ExactlyAllInSet]  = None,
+        byId: Option[ById]                  = None,
         roles: Option[ExactRole]            = None
   )
 
@@ -183,6 +188,14 @@ object Models {
     implicit val publishFormats = jsonFormat1(Publish.apply)
   }
 
+  object Body extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val bodyFormats = jsonFormat3(Body.apply)
+  }
+
+  object LongURL extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val urlFormats = jsonFormat1(LongURL.apply)
+  }
+
   object AllInSet extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val allFormat = jsonFormat1(AllInSet.apply)
   }
@@ -203,8 +216,12 @@ object Models {
     implicit val exactlyAllFormat = jsonFormat2(ExactlyAllInSet.apply)
   }
 
+  object ById extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val byIdFormat = jsonFormat1(ById.apply)
+  }
+
   object Find extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val findFormats = jsonFormat5(Find.apply)
+    implicit val findFormats = jsonFormat6(Find.apply)
   }
 
   object Persist extends DefaultJsonProtocol with SprayJsonSupport {

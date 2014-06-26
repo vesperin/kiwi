@@ -30,6 +30,7 @@ trait CommandFlattener {
       find.any,
       find.exact,
       find.exactlyAll,
+      find.byId,
       find.roles
     ).flatten
 

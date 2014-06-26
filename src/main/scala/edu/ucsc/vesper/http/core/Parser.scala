@@ -23,7 +23,10 @@ trait Parser {
       case "all"     => Command(find = Some(Find(all    = Some(AllInSet()))))
       case "name"    => Command(find = Some(Find(exact  = Some(ExactlyOne(command, args(0))))))
       case "tags"    => Command(find = Some(Find(any    = Some(AnyInSet(command, args)))))
+      case "algs"    => Command(find = Some(Find(any    = Some(AnyInSet("algorithms", args)))))
+      case "ds"      => Command(find = Some(Find(any    = Some(AnyInSet("datastructures", args)))))
       case "url"     => Command(find = Some(Find(exact  = Some(ExactlyOne(command, args(0))))))
+      case "id"      => Command(find = Some(Find(byId   = Some(ById(args(0))))))
       case "roles"   => Command(find = Some(Find(roles  = Some(ExactRole(args(0))))))
       case `command` => Command()
     }

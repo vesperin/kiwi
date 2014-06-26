@@ -36,6 +36,7 @@ libraryDependencies ++= {
     , "org.reactivemongo"   %%  "reactivemongo"        % "0.10.0"
     , "sprest"              %%  "sprest-reactivemongo" % "0.3.2"
     , "org.specs2"          %%  "specs2-core"          % "2.3.7" % "test"
+    , "org.twitter4j"       %   "twitter4j-core"       % "4.0.2"
   )
 }
 

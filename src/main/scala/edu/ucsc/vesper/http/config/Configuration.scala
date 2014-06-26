@@ -61,4 +61,11 @@ trait Configuration {
 
   /** Password for specified user and database. */
   lazy val dbPassword = Try(config.getString("db.password")).toOption.orNull
+
+  // twitter info
+
+  lazy val OAuthConsumerKey       = Try(config.getString("twitter.OAuthConsumerKey")).toOption.orNull
+  lazy val OAuthConsumerSecret    = Try(config.getString("twitter.OAuthConsumerSecret")).toOption.orNull
+  lazy val OAuthAccessToken       = Try(config.getString("twitter.OAuthAccessToken")).toOption.orNull
+  lazy val OAuthAccessTokenSecret = Try(config.getString("twitter.OAuthAccessTokenSecret")).toOption.orNull
 }

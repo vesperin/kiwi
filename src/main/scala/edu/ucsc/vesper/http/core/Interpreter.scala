@@ -5,6 +5,8 @@ import edu.ucsc.refactor.spi._
 import edu.ucsc.refactor.util.Commit
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models._
+import twitter4j.{Twitter, Status, TwitterFactory}
+import twitter4j.conf.ConfigurationBuilder
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -19,6 +21,15 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   val parser: Parser    = CommandParser()
   val storage: Storage  = VesperStorage()
+  val twitter:Twitter = new TwitterFactory(
+    new ConfigurationBuilder()
+      .setOAuthConsumerKey(OAuthConsumerKey)
+      .setOAuthConsumerSecret(OAuthConsumerSecret)
+      .setOAuthAccessToken(OAuthAccessToken)
+      .setOAuthAccessTokenSecret(OAuthAccessTokenSecret)
+      .build()
+  ).getInstance()
+  val googleShortener: GoogleUrlShortener = new GoogleUrlShortener
 
   val Curator     = 0
   val Reviewer    = 1
@@ -426,13 +437,130 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       case any: AnyInSet                => storage.find(any)
       case exact: ExactlyOne            => storage.find(exact)
       case exactlyAll: ExactlyAllInSet  => storage.find(exactlyAll)
+      case byId: ById                   => storage.findById(byId)
       case _                            => Future(Some(Result(failure = Some(Failure("Unknown command")))))
     }
   }
 
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
-    storage.persist(persist.source)
+    def makeVesperUrl(id: Option[String]): Future[String] = id match {
+      case Some(cid) => Future("""http://www.cookandstuff.com/vesper/find?q=id:""" + cid + """&auth_token=legolas""")
+      case None      => Future("""http://www.cookandstuff.com/vesper/help""")
+    }
+
+    def getDescription(code: Code): Future[String] = Future(code.description)
+
+    def getVesperUrl(code: Code): Future[String]   = {
+      for {
+        vesperUrl <- makeVesperUrl(code.id)
+        tinyUrl   <- googleShortener.shortenUrl(vesperUrl)
+      } yield {
+        tinyUrl
+      }
+    }
+
+    def buildStatus(code: Code, desc: String, tinyUrl: String): Future[String] = {
+      // HACK (use remove Java: prefix to detect the existence of prefix)
+
+      Future {
+        val massagedDescription: String   = "Java: " + desc.stripPrefix("Java:").stripSuffix(".").trim + " " + tinyUrl + " "
+        val algorithms      = code.algorithms
+        val datastructures  = code.datastructures
+        val tags            = code.tags
+        val confidence      = code.confidence match {
+          case 1 => "#1star"
+          case 2 => "#2star"
+          case 3 => "#3star"
+          case 4 => "#4star"
+          case 5 => "#5star"
+        }
+
+        val builder = new mutable.StringBuilder(massagedDescription)
+        val visited = mutable.Set.empty[String]
+
+        builder.append(confidence)
+
+        var lookAheadLen = 0
+        for(a <- algorithms){
+          lookAheadLen = (builder.toString() + "#" + a).length
+          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + a)){
+            builder.append(" #").append(a)
+            visited.add("#" + a)
+          }
+        }
+
+        lookAheadLen = 0
+        for(d <- datastructures){
+          lookAheadLen = (builder.toString() + "#" + d).length
+          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + d)){
+            builder.append(" #").append(d)
+            visited.add("#" + d)
+          }
+        }
+
+        lookAheadLen = 0
+        for(t <- tags){
+          lookAheadLen = (builder.toString() + "#" + t).length
+          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + t)){
+            builder.append(" #").append(t)
+            visited.add("#" + t)
+          }
+        }
+
+        builder.toString()
+
+      }
+    }
+
+    def tweetMessage(code: Code): Future[String] = {
+      for {
+        desc          <- getDescription(code)
+        tinyUrl       <- getVesperUrl(code)
+        builtStatus   <- buildStatus(code, desc, tinyUrl)
+      } yield {
+        builtStatus
+      }
+    }
+
+    def logStatus(code: Code, status: Status): Future[Code] = {
+       Future {
+         println("%s was saved, then tweeted by @codetour. Tweet: %s".format(code.name, status.getText))
+         code
+       }
+    }
+
+    def updateStatus(twitter: Twitter, statusMessage: String): Future[Status] = Future(twitter.updateStatus(statusMessage))
+
+    def postStatus(code: Code, statusMessage: String): Future[Code] = {
+      for {
+        status  <- updateStatus(twitter, statusMessage)
+        theCode <- logStatus(code, status)
+      } yield {
+        theCode
+      }
+    }
+
+    def tryTweeting(code: Code): Future[Code] = {
+      for {
+        status  <- tweetMessage(code)
+        theCode <- postStatus(code, status)
+      } yield {
+        theCode
+      }
+    }
+
+    def produceResult(theCode: Code): Future[Option[Result]] = {
+      Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name)))))))
+    }
+
+    for {
+      code        <- storage.persist(persist.source)
+      tweetedCode <- tryTweeting(code)
+      result      <- produceResult(tweetedCode)
+    } yield {
+      result
+    }
   }
 
   private[core] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
