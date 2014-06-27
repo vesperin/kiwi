@@ -33,7 +33,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       .setOAuthAccessTokenSecret(OAuthAccessTokenSecret)
       .build()
   ).getInstance()
-  val googleShortener: GoogleUrlShortener = new GoogleUrlShortener
 
   val Curator     = 0
   val Reviewer    = 1
@@ -456,6 +455,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     def getDescription(code: Code): Future[String] = Future(code.description)
 
     def getVesperUrl(code: Code): Future[String]   = {
+      val googleShortener: GoogleUrlShortener = new GoogleUrlShortener
       for {
         vesperUrl <- makeVesperUrl(code.id)
         tinyUrl   <- googleShortener.shortenUrl(vesperUrl)
@@ -612,8 +612,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   }
 
   private def page(theCode: Code) = {
-    var hrefUrl = theCode.url.getOrElse("#")
-    var txtUrl  = theCode.url.getOrElse("(Missing URL)")
+    val hrefUrl = theCode.url.getOrElse("#")
+    val txtUrl  = theCode.url.getOrElse("(Missing URL)")
     val codesnippet = html(
       head(
         meta(charset := "utf-8"),
