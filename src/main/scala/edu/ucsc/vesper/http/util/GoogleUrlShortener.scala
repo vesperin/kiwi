@@ -1,4 +1,4 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.util
 
 import edu.ucsc.vesper.http.domain.Models.{Body, LongURL}
 import org.scribe.builder.ServiceBuilder

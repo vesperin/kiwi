@@ -5,8 +5,8 @@ import akka.io.IO
 import spray.can.Http
 import akka.util.Timeout
 import scala.concurrent.duration._
-import util.Properties
 import edu.ucsc.vesper.http.api.VesperinApi
+import scala.util.Properties
 
 object Main extends App {
 

@@ -1,8 +1,8 @@
 package edu.ucsc.vesper.http.domain
 
-import spray.json.DefaultJsonProtocol
 import spray.httpx.SprayJsonSupport
-import sprest.models.{ModelCompanion, Model}
+import spray.json.DefaultJsonProtocol
+import sprest.models.{Model, ModelCompanion}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)

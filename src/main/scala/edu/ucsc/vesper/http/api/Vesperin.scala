@@ -79,7 +79,13 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
               q =>
                 detach(){
                   onComplete(interpreter.eval(membership, q)){
-                    case result => complete(result)
+                    case result => complete {
+                      if(q.contains("id:")){  // HACK: can we do better than this?
+                        interpreter.renderAsHtml(result)
+                      } else {
+                        result
+                      }
+                    }
                   }
                 }
             }
