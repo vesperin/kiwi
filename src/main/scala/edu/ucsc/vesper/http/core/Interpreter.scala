@@ -25,14 +25,6 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   val parser: Parser    = CommandParser()
   val storage: Storage  = VesperStorage()
-  val twitter:Twitter = new TwitterFactory(
-    new ConfigurationBuilder()
-      .setOAuthConsumerKey(OAuthConsumerKey)
-      .setOAuthConsumerSecret(OAuthConsumerSecret)
-      .setOAuthAccessToken(OAuthAccessToken)
-      .setOAuthAccessTokenSecret(OAuthAccessTokenSecret)
-      .build()
-  ).getInstance()
 
   val Curator     = 0
   val Reviewer    = 1
@@ -536,6 +528,16 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     def updateStatus(twitter: Twitter, statusMessage: String): Future[Status] = Future(twitter.updateStatus(statusMessage))
 
     def postStatus(code: Code, statusMessage: String): Future[Code] = {
+
+      val twitter:Twitter = new TwitterFactory(
+        new ConfigurationBuilder()
+          .setOAuthConsumerKey(OAuthConsumerKey)
+          .setOAuthConsumerSecret(OAuthConsumerSecret)
+          .setOAuthAccessToken(OAuthAccessToken)
+          .setOAuthAccessTokenSecret(OAuthAccessTokenSecret)
+          .build()
+      ).getInstance()
+
       for {
         status  <- updateStatus(twitter, statusMessage)
         theCode <- logStatus(code, status)
