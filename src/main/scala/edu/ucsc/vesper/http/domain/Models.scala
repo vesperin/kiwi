@@ -37,6 +37,9 @@ object Models {
       /** the current content of this Source **/
       , content: String
 
+      /** the curation elapsed time **/
+      , elapsedtime: Option[String]   = None
+
       /**
        * tags or labels categorizing this source code. This
        * information gives the context of source code; e.g., Cracking code interview.
@@ -149,7 +152,7 @@ object Models {
   }
 
   object Code extends ModelCompanion[Code, String] {
-    implicit val codeFormats = jsonFormat12(Code.apply)
+    implicit val codeFormats = jsonFormat13(Code.apply)
   }
 
   object Draft extends DefaultJsonProtocol with SprayJsonSupport {

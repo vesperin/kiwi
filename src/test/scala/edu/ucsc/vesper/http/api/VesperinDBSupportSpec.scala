@@ -33,6 +33,7 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
           name = "GCD.java",
           description     = "The greatest common divisor algorithm /by @codetour.",
           content         = "class GCD {\t\t\n\t\tstatic int computeGcd(int a, int b){\n\t\t return BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).intValue(); \n\t\t}\n}",
+          elapsedtime     = Some("00:05:00"),
           tags            = List("CrackingTheCodeInterview"),
           datastructures  = List("BigInteger"),
           algorithms      = List("GCD"),
