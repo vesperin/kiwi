@@ -79,11 +79,29 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
               q =>
                 detach(){
                   onComplete(interpreter.eval(membership, q)){
+                    case result => complete(result)
+                  }
+                }
+            }
+          }
+        }
+      }
+    }
+
+  val render =
+    path("render") {
+      authenticate(vesperin) { membership =>
+        get {
+          authorize(isReviewer(membership)){
+            parameter('q){
+              q =>
+                detach(){
+                  onComplete(interpreter.eval(membership, q)){
                     case result => complete {
-                      if(q.contains("id:")){  // HACK: can we do better than this?
+                      if(q.contains("id:")){
                         interpreter.renderAsHtml(result)
                       } else {
-                        result
+                        <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
                       }
                     }
                   }
@@ -96,6 +114,6 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val vesperRoutes =
     pathPrefix("vesper") {
-      describe ~ eval ~ find
+      describe ~ eval ~ find ~ render
     }
 }

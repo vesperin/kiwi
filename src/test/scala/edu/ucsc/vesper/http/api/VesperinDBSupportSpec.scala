@@ -64,14 +64,16 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
       Get("/vesper/find?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
 
         status === StatusCodes.OK
-//        val res: Result = responseAs[Result]
-//        println(interpreter.renderAsHtml(Try(Some(res))))
-//
-//        val prettier = new scala.xml.PrettyPrinter(80, 4)
-//        println(prettier.format(interpreter.renderAsHtml(Try(Some(res)))))
-//
-//        res.sources.get.nonEmpty mustEqual true
+        val res: Result = responseAs[Result]
+        res.sources.get.nonEmpty mustEqual true
 
+      }
+    }
+
+    "render HTML of a single Code Result Set containing matching id for GET request to the root path" in {
+      Get("/vesper/render?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+
+        status === StatusCodes.OK
       }
     }
   }
