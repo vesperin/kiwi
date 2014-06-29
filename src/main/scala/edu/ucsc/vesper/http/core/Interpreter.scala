@@ -5,7 +5,7 @@ import edu.ucsc.refactor.spi._
 import edu.ucsc.refactor.util.{SourceFormatter, Commit}
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models._
-import edu.ucsc.vesper.http.util.GoogleUrlShortener
+import edu.ucsc.vesper.http.util.{LinkifyTweet, GoogleUrlShortener}
 import twitter4j.{Twitter, Status, TwitterFactory}
 import twitter4j.conf.ConfigurationBuilder
 
@@ -613,9 +613,20 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
   }
 
+  def linkify(text: String) = {
+    LinkifyTweet.createLinks(text)
+  }
+
   private def page(theCode: Code) = {
-    val hrefUrl = theCode.url.getOrElse("#")
-    val txtUrl  = theCode.url.getOrElse("(Missing URL)")
+    val hrefUrl   = theCode.url.getOrElse("#")
+    val txtUrl    = theCode.url.getOrElse("(Missing URL)")
+    val linkified = linkify(theCode.description.stripSuffix(".") + " " +
+      List.concat(
+        theCode.tags,
+        theCode.algorithms,
+        theCode.datastructures
+      ).distinct.map(x => "#" + x).mkString(" "))
+
     val codesnippet = html(
       head(
         meta(charset := "utf-8"),
@@ -630,14 +641,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
           h3(theCode.name + " ", a(href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
-          p(
-            theCode.description.stripSuffix(".") +
-              " " +
-              List.concat(
-                theCode.tags,
-                theCode.algorithms,
-                theCode.datastructures
-              ).distinct.map(x => "#" + x).mkString(" ")),
+          p(raw(linkified)),
           // code
           div(
             pre(style:= "display: block; padding: 6px 4px; background: #fff; border: 1px dashed #ddd; margin-top:5px;") (
