@@ -5,7 +5,7 @@ import java.util.regex.Pattern
 /**
  * Extracts links from Twitter status; thx to https://github.com/dcbriccetti/talking-puffin
  */
-object LinkifyTweet {
+object LinkifyText {
 
   val urlCharClass = """[^'"()\[\]\s]"""
   val hyperlinkRegex = "(https?://" + urlCharClass + "+)"
@@ -25,12 +25,12 @@ object LinkifyTweet {
   def linkForAnalyze(user: String) = "http://twitter.com/" + user
   def hashTagForAnalyze(user: String) = "https://twitter.com/search/?src=hash&q=%23" + user
 
-  def createLinks(text: String) = LinkifyTweet.replaceHashtagCode(
-    LinkifyTweet.replaceAtCode(
-      LinkifyTweet.wrapUserLinks(
-        LinkifyTweet.wrapUserLists(
-          LinkifyTweet.wrapHashtags(
-            LinkifyTweet.wrapLinks(text)
+  def createLinks(text: String) = LinkifyText.replaceHashtagCode(
+    LinkifyText.replaceAtCode(
+      LinkifyText.wrapUserLinks(
+        LinkifyText.wrapUserLists(
+          LinkifyText.wrapHashtags(
+            LinkifyText.wrapLinks(text)
           )
         )
       )
@@ -51,8 +51,8 @@ object LinkifyTweet {
   private val atCode = "##xX##"
   private val hashtagCode = "##yY##"
 
-  private def wrapUserLinks(text: String) = text.replaceAll(LinkifyTweet.usernameRegex,
-    "<a href='" + LinkifyTweet.usernameUrl + "' target='_blank'>" + atCode + "$1</a>")
+  private def wrapUserLinks(text: String) = text.replaceAll(LinkifyText.usernameRegex,
+    "<a href='" + LinkifyText.usernameUrl + "' target='_blank'>" + atCode + "$1</a>")
 
   private def wrapLinks(text: String): String = {
     val items = getLinkItems(text) // Example: ("url", "url")
@@ -63,8 +63,8 @@ object LinkifyTweet {
     newText
   }
 
-  private def wrapHashtags(text: String) = text.replaceAll(LinkifyTweet.hashtagsRegex,
-    "<a href='" + LinkifyTweet.hashtagUrl + "' target='_blank'>" + hashtagCode + "$1</a>")
+  private def wrapHashtags(text: String) = text.replaceAll(LinkifyText.hashtagsRegex,
+    "<a href='" + LinkifyText.hashtagUrl + "' target='_blank'>" + hashtagCode + "$1</a>")
 
   private def wrapUserLists(text: String): String = {
     val items = getListItems(text) // Example: ("dave/scala", "http://twitter.com/dave/scala")
