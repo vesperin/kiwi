@@ -32,9 +32,7 @@ case class Html(theCode: Code) {
 
         /* css links */
         link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
-//        link(rel:= "stylesheet", href:="http://yandex.st/highlightjs/8.0/styles/tomorrow.min.css")
-        link(rel:= "stylesheet", href:="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.css"),
-        link(rel:= "stylesheet", href:="http://demo.stanleyhlng.com/prettify-js/assets/themes/tomorrow-night-light/prettify.css")
+        link(rel:= "stylesheet", href:="http://yandex.st/highlightjs/8.0/styles/tomorrow.min.css")
       ),
 
       body(
@@ -45,7 +43,7 @@ case class Html(theCode: Code) {
           // code
           div(
             pre(style:= "display: block; padding: 6px 4px; background: #fff; border: 1px dashed #ddd; margin-top:5px;") (
-              code(`class`:="prettyprint linenums lang-java", style:="font-size: 12px;")(
+              code(`class`:="java", style:="font-size: 12px;")(
                 raw(new SourceFormatter().format(theCode.content))
               )
             )
@@ -63,18 +61,9 @@ case class Html(theCode: Code) {
           ) // end of footer
         ), // end of main
         script(src:="https://code.jquery.com/jquery-2.1.1.js"),
-//        script(src:="http://yandex.st/highlightjs/8.0/highlight.min.js"),
+        script(src:="http://yandex.st/highlightjs/8.0/highlight.min.js"),
         script(src:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"),
-        script(src:="http://google-code-prettify.googlecode.com/svn/trunk/src/prettify.js"),
-//        script("hljs.initHighlightingOnLoad();")
-        script(
-          """
-            | (function(jQuery){
-            |   jQuery( document ).ready( function() {
-            |     prettyPrint();
-            |   });
-            | }(window.jQuery))
-          """.stripMargin)
+        script("hljs.initHighlightingOnLoad();")
       )
 
     )
