@@ -41,7 +41,19 @@ case class Html(theCode: Code) {
         /* css links */
         link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
         link(rel:= "stylesheet", href:="https://raw.githubusercontent.com/LeaVerou/prism/gh-pages/themes/prism.css"),
-        link(rel:= "stylesheet", href:="http://prismjs.com/plugins/line-numbers/prism-line-numbers.css")
+        link(rel:= "stylesheet", href:="http://prismjs.com/plugins/line-numbers/prism-line-numbers.css"),
+        scalatags.Text.tags2.style(
+          """
+            |.token.operator,
+            |.token.entity,
+            |.token.url,
+            |.language-css .token.string,
+            |.style .token.string,
+            |.token.variable {
+            |	color: black;
+            |	background: rgb(90%,90%,90%);
+            |}
+          """.stripMargin)
       ),
 
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
