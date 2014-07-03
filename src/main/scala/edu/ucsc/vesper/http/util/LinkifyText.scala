@@ -52,7 +52,7 @@ object LinkifyText {
   private val hashtagCode = "##yY##"
 
   private def wrapUserLinks(text: String) = text.replaceAll(LinkifyText.usernameRegex,
-    "<a href='" + LinkifyText.usernameUrl + "' target='_blank'>" + atCode + "$1</a>")
+    "<a style='color: black;' href='" + LinkifyText.usernameUrl + "' target='_blank'>" + atCode + "$1</a>")
 
   private def wrapLinks(text: String): String = {
     val items = getLinkItems(text) // Example: ("url", "url")
@@ -64,14 +64,14 @@ object LinkifyText {
   }
 
   private def wrapHashtags(text: String) = text.replaceAll(LinkifyText.hashtagsRegex,
-    "<a href='" + LinkifyText.hashtagUrl + "' target='_blank'>" + hashtagCode + "$1</a>")
+    "<a style='color: black;' href='" + LinkifyText.hashtagUrl + "' target='_blank'>" + hashtagCode + "$1</a>")
 
   private def wrapUserLists(text: String): String = {
     val items = getListItems(text) // Example: ("dave/scala", "http://twitter.com/dave/scala")
     var newText = text
     items.foreach(item => {
       newText = newText.replace("@" + item.title,
-        "<a href='" + item.link + "'>" + atCode + item.title + "</a>")
+        "<a style='color: black;' href='" + item.link + "'>" + atCode + item.title + "</a>")
     })
     newText
   }
