@@ -42,7 +42,7 @@ case class Html(theCode: Code) {
     val likeButtonSettings: String =
       """<span class="likebtn-wrapper" """ +
         "data-identifier=\"" + codeId + "\"" +
-        """ data-popup_enabled="false" data-show_dislike_label="true" data-popup_position="right"
+        """ data-popup_enabled="false" data-show_dislike_label="true" data-popup_position="bottom"
           | data-item_url="http://www.vesperin.com/"
           | data-share_enabled="false"></span>
           | <script type="text/javascript" src="//w.likebtn.com/js/w/widget.js" async="async"></script>
