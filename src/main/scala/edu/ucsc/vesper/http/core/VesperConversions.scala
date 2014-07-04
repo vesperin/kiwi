@@ -1,12 +1,14 @@
 package edu.ucsc.vesper.http.core
 
-import edu.ucsc.refactor.{Location, Issue, Note, Source}
-import edu.ucsc.vesper.http.domain.LoungeObjects.{Warning, Draft, Comment, Code}
-import scala.collection.mutable
-import edu.ucsc.refactor.util.{SourceFormatter, Locations, Commit}
-import edu.ucsc.refactor.spi.{CommitSummary, Refactoring, Name}
 import java.util.Date
-import org.eclipse.jdt.core.dom.{VariableDeclaration, SimpleName, MethodDeclaration, ASTNode}
+
+import edu.ucsc.refactor.Source
+import edu.ucsc.refactor.spi.{CommitSummary, Name, Refactoring}
+import edu.ucsc.refactor.util.{Commit, Note, SourceFormatter}
+import edu.ucsc.vesper.http.domain.Models.{Code, Comment, Draft}
+import org.eclipse.jdt.core.dom.{ASTNode, MethodDeclaration, SimpleName, VariableDeclaration}
+
+import scala.collection.mutable
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -18,30 +20,43 @@ trait VesperConversions {
     val sourceDesc: String        = source.getDescription
     val sourceCont: String        = source.getContents
 
-    val srcComments: Option[List[Comment]] = if(source.getNotes.isEmpty) None else {
+    val srcComments: List[Comment] = if(source.getNotes.isEmpty) List() else {
       val itr: java.util.Iterator[Note] = source.getNotes.iterator
 
       var allComments:mutable.Buffer[Comment] = mutable.Buffer.empty[Comment]
       while(itr.hasNext){
         val each: Note = itr.next
-        val nodeId: Option[String]    = if(each.getId == null) None else Some(each.getId)
-        val username: Option[String]  = if(each.getUser == null) None else Some(each.getUser)
-        val mark:Option[List[Int]]    = if(each.getMark == null) None else {
-          Some(List(each.getMark.getStart.getOffset, each.getMark.getEnd.getOffset))
+        val isMarkEmpty: Boolean  = each.getMark == null
+
+        val from: String = if(isMarkEmpty) "0;0;0" else {
+          val line: Int = each.getMark.getStart.getLine
+          val col: Int  = each.getMark.getStart.getColumn
+          val off: Int  = each.getMark.getStart.getOffset
+
+          "%d;%d;%d".format(line, col, off)
         }
 
-        allComments += Comment(nodeId, username, each.getContent, mark)
+        val to: String = if(isMarkEmpty) "0;0;0" else {
+          val line: Int = each.getMark.getEnd.getLine
+          val col: Int  = each.getMark.getEnd.getColumn
+          val off: Int  = each.getMark.getEnd.getOffset
+
+          "%d;%d;%d".format(line, col, off)
+        }
+
+        allComments += Comment(from, to, each.getContent)
       }
 
-      Some(allComments.toList)
+      allComments.toList
     }
 
     Code(
-      id          = sourceId,
       name        = sourceName,
       description = sourceDesc,
       content     = sourceCont,
-      comments    = srcComments
+      tags        = List(),
+      comments    = srcComments,
+      id          = sourceId
     )
   }
 
@@ -52,11 +67,11 @@ trait VesperConversions {
       result.setId(source.id.get)
     }
 
-    if(source.comments != None){
-      val list = source.comments.get
+    if(source.comments != null){
+      val list = source.comments
 
       for(c <- list){
-        val id: String        = if(c.id != None) c.id.get else null
+        val id: String        = null // no id since comments are not persisted and are just embedded into the Code schema
         val username: String  = if(c.username != None) c.username.get else null
         val eachNote: Note    = new Note(id, username, c.text)
 
@@ -67,16 +82,37 @@ trait VesperConversions {
     result
   }
 
-  def asFormattedDraft(commit: Commit): Draft = {
+
+  def asFormatterDraft(source: Source, cause: String, description: String): Draft = {
+    val formattedContent: String  = new SourceFormatter().format(source.getContents)
+
+    Draft(
+      cause,
+      description,
+      System.nanoTime(),
+      asCode(source),
+      asCode(Source.from(source, formattedContent))
+    )
+  }
+
+  def asFormattedDraft(commit: Commit, cause: String, description: String): Draft = {
     val src: Source               = commit.getSourceAfterChange
     val formattedContent: String  = new SourceFormatter().format(src.getContents)
 
     Draft(
-      commit.getNameOfChange.getKey,
-      simplePast(commit.getNameOfChange.getKey),
+      cause,
+      description,
       commit.getTimestamp,
       asCode(commit.getSourceBeforeChange),
       asCode(Source.from(src, formattedContent))
+    )
+  }
+
+  def asFormattedDraft(commit: Commit): Draft = {
+    asFormattedDraft(
+      commit,
+      commit.getNameOfChange.getKey,
+      simplePast(commit.getNameOfChange.getKey)
     )
   }
 
@@ -108,37 +144,6 @@ trait VesperConversions {
       after,
       summary
     )
-  }
-
-  def asWarning(source: Source, each: Issue): Warning = {
-    var marks:mutable.Buffer[Int]         = mutable.Buffer.empty[Int]
-    val nodes:java.util.List[ASTNode]     = each.getAffectedNodes
-    val nitr:java.util.Iterator[ASTNode]  = nodes.iterator()
-
-    var names: mutable.Buffer[String] = mutable.Buffer.empty[String]
-    while(nitr.hasNext){
-      val node: ASTNode = nitr.next
-      if(nodes.size() > 1){
-        if(!node.isInstanceOf[MethodDeclaration]){
-          names += getSimpleName(node)
-          val loc: Location = Locations.locate(source, node)
-          marks += loc.getStart.getOffset
-          marks += loc.getEnd.getOffset
-        }
-      } else {
-        val loc: Location = Locations.locate(source, node)
-        marks += loc.getStart.getOffset
-        marks += loc.getEnd.getOffset
-        names += getSimpleName(node)
-      }
-    }
-
-    Warning(
-      names.mkString(","),
-      each.getName.getKey,
-      Some(marks.toList)
-    )
-
   }
 
   private def getSimpleName(astNode: ASTNode): String = {
@@ -174,5 +179,7 @@ trait VesperConversions {
     case "Rename Parameter"       => "Renamed parameter"
     case "Rename field"           => "Renamed field"
     case "Rename Type"            => "Renamed type"
+    case "Rename variable"        => "Renamed local variable"
+    case "Delete variable"        => "Removed local variable"
   }
 }

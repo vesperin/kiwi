@@ -1,12 +1,12 @@
 package edu.ucsc.vesper.http.core
 
-import spray.routing.{AuthenticationFailedRejection, RequestContext, HttpService}
-import scala.concurrent.Future
-import spray.routing.authentication._
-import scala.Some
-import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.LoungeObjects._
+import edu.ucsc.vesper.http.domain.Models._
+import spray.routing.AuthenticationFailedRejection.CredentialsMissing
+import spray.routing.authentication._
+import spray.routing.{AuthenticationFailedRejection, HttpService, RequestContext}
+
+import scala.concurrent.Future
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
