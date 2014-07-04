@@ -29,11 +29,29 @@ case class Html(theCode: Code) {
 
     val blockquotes = scala.collection.mutable.ListBuffer.empty[String]
     for(comment <- theCode.comments){
-      blockquotes +=  ("[" + (comment.from.split(";")(0).toInt + 1) + "-" +  (comment.to.split(";")(0).toInt + 1) + "]: " + comment.text + ".")
+      blockquotes +=  ("["
+        + (comment.from.split(";")(0).toInt + 1) + "-"
+        +  (comment.to.split(";")(0).toInt + 1) + "]: "
+        + comment.text
+        + ".")
     }
 
+    val codeId: String = theCode.id.getOrElse("vesperized")
 
-    val codesnippet = html( style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;",
+
+    val likeButtonSettings: String =
+      """<span class="likebtn-wrapper" """ +
+        "data-identifier=\"" + codeId + "\"" +
+        """ data-popup_enabled="false" data-show_dislike_label="true" data-popup_position="right"
+          | data-item_url="http://www.vesperin.com/"
+          | data-share_enabled="false"></span>
+          | <script type="text/javascript" src="//w.likebtn.com/js/w/widget.js" async="async"></script>
+        """.stripMargin
+
+    val likeDislikeButtons: String = likeButtonSettings
+
+    val codesnippet = html(
+      style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;",
       head(
         meta(charset := "utf-8"),
         title(theCode.name),
@@ -52,6 +70,8 @@ case class Html(theCode: Code) {
             |.token.variable {
             |	color: black;
             |	background: rgb(90%,90%,90%);
+            |
+            | .main_like{margin-bottom:10px; text-align:center;}
             |}
           """.stripMargin)
       ),
@@ -59,12 +79,14 @@ case class Html(theCode: Code) {
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
+          p(`class`:= "main_like")(raw(likeDislikeButtons)),
           h3(theCode.name + ": ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
           p(raw(linkified)),
           // code
           div(
             pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.6rem;") (
-              code(id:="vesperized", `class`:="language-clike", style:="display: block; font-size: 1.4rem; padding: 3px 4px 13px 4px; top: 0; background: rgb(90%,90%,90%);")(
+              code(id:=codeId, `class`:="language-clike",
+                style:="display: block; font-size: 1.4rem; padding: 3px 4px 13px 4px; top: 0; background: rgb(90%,90%,90%);")(
                 raw(new SourceFormatter().format(theCode.content))
               )
             )
