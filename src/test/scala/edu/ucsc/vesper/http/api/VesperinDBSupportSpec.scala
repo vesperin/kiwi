@@ -11,7 +11,8 @@ import spray.testkit.Specs2RouteTest
 import scala.concurrent.duration._
 
 /**
- * TODO(Huascar) describe class.
+ * This class covers any DB tests for vesper; e.g., storing code snippet, finding code snippet, rendering
+ * a nice HTML pages for a code snippet, etc.
  *
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  *
