@@ -29,7 +29,7 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
 
   "Vesperin-with-mongo" should {
     "return Code snippet was saved! on a put request and perform a database insert " in {
-      Put("/vesper/eval", Command(persist = Some(Persist(
+      Put("/kiwi/eval", Command(persist = Some(Persist(
         Code(
           name = "GCD.java",
           description     = "The greatest common divisor algorithm /by @codedetour.",
@@ -50,19 +50,19 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
     }
 
     "return a Code Result Set containing matching Tags for GET request to the root path" in {
-      Get("/vesper/find?q=tags:CrackingTheCodeInterview") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+      Get("/kiwi/find?q=tags:CrackingTheCodeInterview") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
         responseAs[Result].sources.get.nonEmpty mustEqual true
       }
     }
 
     "return a Code Result Set containing matching Algs for GET request to the root path" in {
-      Get("/vesper/find?q=algs:GCD") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+      Get("/kiwi/find?q=algs:GCD") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
         responseAs[Result].sources.get.nonEmpty mustEqual true
       }
     }
 
     "return a single Code Result Set containing matching id for GET request to the root path" in {
-      Get("/vesper/find?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+      Get("/kiwi/find?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
 
         status === StatusCodes.OK
         val res: Result = responseAs[Result]
@@ -72,7 +72,7 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
     }
 
     "render HTML of a single Code Result Set containing matching id for GET request to the root path" in {
-      Get("/vesper/render?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+      Get("/kiwi/render?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
 
         status === StatusCodes.OK
       }
