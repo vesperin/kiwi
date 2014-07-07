@@ -1,16 +1,16 @@
 package edu.ucsc.vesper.http.api
 
-import spray.http.HttpHeaders.Origin
-import spray.routing.HttpService
 import edu.ucsc.vesper.http.core._
 import edu.ucsc.vesper.http.domain.Models.Command
+import spray.http.HttpHeaders.Origin
 import spray.httpx.SprayJsonSupport
-import SprayJsonSupport._
+import spray.httpx.SprayJsonSupport._
+import spray.routing.HttpService
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Vesperin extends HttpService with AsyncSupport with UserLounge with CORSDirectives {
+trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   /**
    * The reason I decided to desist from adding thousands of instances of a some Interpreter actor
