@@ -3,7 +3,6 @@ package edu.ucsc.vesper.http.api
 import edu.ucsc.vesper.http.core._
 import edu.ucsc.vesper.http.domain.Models.Command
 import spray.http.HttpHeaders.Origin
-import spray.httpx.SprayJsonSupport
 import spray.httpx.SprayJsonSupport._
 import spray.routing.HttpService
 
