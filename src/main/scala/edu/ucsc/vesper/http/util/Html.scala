@@ -15,6 +15,10 @@ object Html {
     LinkifyText.createLinks(text)
   }
 
+  def ohSnap() = {
+    <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
+  }
+
   def renderHelp() = {
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
       meta(charset := "utf-8"),

@@ -438,8 +438,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
-      case Some(cid) => Future("""http://www.cookandstuff.com/vesper/render?q=id:""" + cid + """&auth_token=legolas""")
-      case None      => Future("""http://www.cookandstuff.com/vesper/help""")
+      case Some(cid) => Future("""http://www.vesperin.com/kiwi/render?q=id:""" + cid + """&auth_token=legolas""")
+      case None      => Future("""http://www.vesperin.com/kiwi/help""")
     }
 
     def getDescription(code: Code): Future[String] = Future(code.description)
@@ -570,6 +570,10 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
+  def eval(command: String): Future[Option[Result]] = {
+    eval(Membership(Auth("legolas", passwords("legolas")), Role(Curator, "legolas")), command)
+  }
+
   def eval(membership: Membership, command: Command): Future[Option[Result]] = {
     val who: Auth               = membership.auth
     val what: Role              = membership.role
@@ -604,11 +608,15 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     answer match {
       case x :: xs => x match {
         case c: Code => page(c)
-        case _=> <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
+        case _=> ohSnap()
       }
 
-      case _=> <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
+      case _=> ohSnap()
     }
+  }
+
+  def ohSnap() = {
+    Html.ohSnap()
   }
 
   def renderHelpPage() =  {

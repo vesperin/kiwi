@@ -78,24 +78,20 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val render =
     path("render") {
-      authenticate(vesperin) { membership =>
-        get {
-          authorize(isReviewer(membership)){
-            parameter('q){
-              q =>
-                detach(){
-                  onComplete(interpreter.eval(membership, q)){
-                    case result => complete {
-                      if(q.contains("id:")){
-                        interpreter.renderAsHtml(result)
-                      } else {
-                        <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
-                      }
-                    }
+      get {
+        parameter('q){
+          q =>
+            detach(){
+              onComplete(interpreter.eval(q)){
+                case result => complete {
+                  if(q.contains("id:")){
+                    interpreter.renderAsHtml(result)
+                  } else {
+                    interpreter.ohSnap()
                   }
                 }
+              }
             }
-          }
         }
       }
     }
