@@ -10,7 +10,7 @@ import SprayJsonSupport._
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Vesperin extends HttpService with AsyncSupport with UserLounge {
+trait Vesperin extends HttpService with AsyncSupport with UserLounge with CORSDirectives {
 
   /**
    * The reason I decided to desist from adding thousands of instances of a some Interpreter actor
@@ -52,7 +52,9 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
               command =>
                 detach(){
                   onComplete(interpreter.eval(membership, command)){
-                    case result => complete(result)
+                    case result => corsFilter(List("*")){
+                      complete(result)
+                    }
                   }
                 }
             }
@@ -70,7 +72,9 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
               q =>
                 detach(){
                   onComplete(interpreter.eval(membership, q)){
-                    case result => complete(result)
+                    case result => corsFilter(List("*")){
+                      complete(result)
+                    }
                   }
                 }
             }
