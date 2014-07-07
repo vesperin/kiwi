@@ -438,7 +438,7 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
-      case Some(cid) => Future("""http://www.vesperin.com/kiwi/render?q=id:""" + cid + """&auth_token=legolas""")
+      case Some(cid) => Future("""http://www.vesperin.com/kiwi/render?q=id:""" + cid)
       case None      => Future("""http://www.vesperin.com/kiwi/help""")
     }
 
