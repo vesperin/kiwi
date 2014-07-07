@@ -1,6 +1,6 @@
 package edu.ucsc.vesper.http.api
 
-import spray.http.HttpHeaders.RawHeader
+import spray.http.HttpHeaders.Origin
 import spray.routing.HttpService
 import edu.ucsc.vesper.http.core._
 import edu.ucsc.vesper.http.domain.Models.Command
@@ -41,20 +41,20 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
+  Origin
+
   val eval =
     path("eval"){
-      respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")){
-        authenticate(vesperin) { membership =>
-          (post | put) {
-            authorize(isCurator(membership)){
-              entity(as[Command]) {
-                command =>
-                  detach(){
-                    onComplete(interpreter.eval(membership, command)){
-                      case result => complete(result)
-                    }
+      authenticate(vesperin) { membership =>
+        (post | put) {
+          authorize(isCurator(membership)){
+            entity(as[Command]) {
+              command =>
+                detach(){
+                  onComplete(interpreter.eval(membership, command)){
+                    case result => complete(result)
                   }
-              }
+                }
             }
           }
         }
@@ -63,18 +63,16 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val find =
     path("find") {
-      respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")){
-        authenticate(vesperin) { membership =>
-          get {
-            authorize(isReviewer(membership)){
-              parameter('q){
-                q =>
-                  detach(){
-                    onComplete(interpreter.eval(membership, q)){
-                      case result => complete(result)
-                    }
+      authenticate(vesperin) { membership =>
+        get {
+          authorize(isReviewer(membership)){
+            parameter('q){
+              q =>
+                detach(){
+                  onComplete(interpreter.eval(membership, q)){
+                    case result => complete(result)
                   }
-              }
+                }
             }
           }
         }
@@ -83,22 +81,20 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val render =
     path("render") {
-      respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")){
-        get {
-          parameter('q){
-            q =>
-              detach(){
-                onComplete(interpreter.eval(q)){
-                  case result => complete {
-                    if(q.contains("id:")){
-                      interpreter.renderAsHtml(result)
-                    } else {
-                      interpreter.ohSnap()
-                    }
+      get {
+        parameter('q){
+          q =>
+            detach(){
+              onComplete(interpreter.eval(q)){
+                case result => complete {
+                  if(q.contains("id:")){
+                    interpreter.renderAsHtml(result)
+                  } else {
+                    interpreter.ohSnap()
                   }
                 }
               }
-          }
+            }
         }
       }
     }
