@@ -149,7 +149,7 @@ object Html {
 
           // comments
           div(
-            h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Comments"),
+            h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")(strong(blockquotes.size), if(blockquotes.size > 1 ) " Comments" else " Comment"),
             div(
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
