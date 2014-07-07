@@ -611,8 +611,12 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
   }
 
+  def renderHelpPage() =  {
+     Html.renderHelp()
+  }
+
   private def page(theCode: Code) = {
-    Html(theCode).createHtmlElement()
+    Html.renderCodesnippet(theCode)
   }
 
 }

@@ -9,13 +9,38 @@ import scalatags.Text.tags2.title
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-case class Html(theCode: Code) {
+object Html {
 
   private def linkify(text: String) = {
     LinkifyText.createLinks(text)
   }
 
-  def createHtmlElement() = {
+  def renderHelp() = {
+    val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
+      meta(charset := "utf-8"),
+      title("Kiwi Vesper's Help"),
+      link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
+        div(`class`:="banner well", style:="background: #ffffff; border: none")(
+          h3("Hello, guest!"),
+          p("I am The Kiwi Vesper. A close companion of Vesper, a code transformation library for Java source code. Kiwi exposes Vesper's API as RESTful service."),
+          p("It was designed and developed by ", a(style:="color: black;", href:= "http://www.huascarsanchez.com")("Huascar Sanchez"), " as part of his research work on Source Code Curation."),
+          p("You can report any experienced bugs to ", a(style:="color: black;", href:= "&#x6d;&#97;&#x69;&#108;&#116;&#x6f;&#58;&#104;&#115;&#x61;&#110;&#x63;&#x68;&#x65;&#x7a;&#x40;&#x63;&#115;&#x2e;&#x75;&#x63;&#x73;&#99;&#46;&#x65;&#100;&#117;")("Huascar Sanchez"), "."),
+          div(id:="footer_wrap", `class`:= "outer")(
+            footer(`class`:= "inner")(
+              p(id:= "project_copyright", `class`:= "copyright")(
+                "2014 Huascar Sanchez."
+              )
+            )
+          )
+        )
+      )
+    )
+
+    scala.xml.Unparsed(help.toString())
+  }
+
+  def renderCodesnippet(theCode: Code) = {
     val hrefUrl: String   = theCode.url.getOrElse("#")
     var txtUrl:String     = theCode.url.getOrElse("(Missing URL)")
     txtUrl = txtUrl.stripPrefix("http://")
