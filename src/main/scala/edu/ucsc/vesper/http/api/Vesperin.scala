@@ -52,9 +52,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge with CORSDi
               command =>
                 detach(){
                   onComplete(interpreter.eval(membership, command)){
-                    case result => corsFilter(List("*")){
-                      complete(result)
-                    }
+                    case result => complete(result)
                   }
                 }
             }
@@ -72,9 +70,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge with CORSDi
               q =>
                 detach(){
                   onComplete(interpreter.eval(membership, q)){
-                    case result => corsFilter(List("*")){
-                      complete(result)
-                    }
+                    case result => complete(result)
                   }
                 }
             }
