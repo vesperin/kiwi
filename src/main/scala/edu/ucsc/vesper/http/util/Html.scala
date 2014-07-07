@@ -16,7 +16,30 @@ object Html {
   }
 
   def ohSnap() = {
-    <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
+    val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
+      meta(charset := "utf-8"),
+      title("Kiwi Vesper's Help"),
+      link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
+        div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
+          h3(strong("Oh, Snap!")),
+          p("There is nothing to render.  "),
+          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
+          p("If you believe this is a mistake, please report it as an issue at ", a(style:="color: black;", href:= "https://github.com/chefedited/vesper-http")("vesper-http"), "."),
+          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
+          div(id:="footer_wrap", `class`:= "outer")(
+            footer(`class`:= "inner")(
+              p(id:= "project_copyright", `class`:= "copyright")(
+                "© 2014 Huascar Sanchez."
+              )
+            )
+          )
+        ),
+        script(src:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js")
+      )
+    )
+
+    scala.xml.Unparsed(help.toString())
   }
 
   def renderHelp() = {
@@ -25,19 +48,22 @@ object Html {
       title("Kiwi Vesper's Help"),
       link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
-        div(`class`:="banner well", style:="background: #ffffff; border: none")(
+        div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
           h3("Hello, guest!"),
-          p("I am The Kiwi Vesper. A close companion of Vesper, a code transformation library for Java source code. Kiwi exposes Vesper's API as RESTful service."),
+          p("I'm ", strong("Kiwi Vesper"), ", a close companion of Vesper, a code transformation library for Java source code. Kiwi exposes Vesper's API as RESTful service."),
+          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
           p("It was designed and developed by ", a(style:="color: black;", href:= "http://www.huascarsanchez.com")("Huascar Sanchez"), " as part of his research work on Source Code Curation."),
-          p("You can report any experienced bugs to ", a(style:="color: black;", href:= "&#x6d;&#97;&#x69;&#108;&#116;&#x6f;&#58;&#104;&#115;&#x61;&#110;&#x63;&#x68;&#x65;&#x7a;&#x40;&#x63;&#115;&#x2e;&#x75;&#x63;&#x73;&#99;&#46;&#x65;&#100;&#117;")("Huascar Sanchez"), "."),
+          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
+          p("You can report any experienced bugs to ", a(style:="color: black;", href:= "mailto:hsanchez@cs.ucsc.edu")("Huascar Sanchez"), "."),
           div(id:="footer_wrap", `class`:= "outer")(
             footer(`class`:= "inner")(
               p(id:= "project_copyright", `class`:= "copyright")(
-                "2014 Huascar Sanchez."
+                "© 2014 Huascar Sanchez."
               )
             )
           )
-        )
+        ),
+        script(src:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js")
       )
     )
 
