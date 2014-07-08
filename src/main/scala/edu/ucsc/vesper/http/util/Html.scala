@@ -16,10 +16,14 @@ object Html {
   }
 
   def ohSnap() = {
+    //https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
-      meta(charset := "utf-8"),
-      title("Kiwi Vesper's Help"),
-      link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+      head(
+        meta(charset := "utf-8"),
+        title("Kiwi Vesper's Help"),
+        link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+        link(rel:= "shortcut icon", href:="https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico")
+      ),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
           h3(strong("Oh, Snap!")),
@@ -44,9 +48,12 @@ object Html {
 
   def renderHelp() = {
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
-      meta(charset := "utf-8"),
-      title("Kiwi Vesper's Help"),
-      link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+      head(
+        meta(charset := "utf-8"),
+        title("Kiwi Vesper's Help"),
+        link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
+        link(rel:= "shortcut icon", href:="https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico")
+      ),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
           h3("Hello, guest!"),
@@ -54,7 +61,7 @@ object Html {
           hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
           p("It was designed and developed by ", a(style:="color: black;", href:= "http://www.huascarsanchez.com")("Huascar Sanchez"), " as part of his research work on Source Code Curation."),
           hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
-          p("You can report any experienced bugs to ", a(style:="color: black;", href:= "mailto:hsanchez@cs.ucsc.edu")("Huascar Sanchez"), "."),
+          p("You can report any experienced bugs at ", a(style:="color: black;", href:= "https://github.com/chefedited/vesper-http")("vesper-http"), "."),
           div(id:="footer_wrap", `class`:= "outer")(
             footer(`class`:= "inner")(
               p(id:= "project_copyright", `class`:= "copyright")(
