@@ -16,7 +16,6 @@ object Html {
   }
 
   def ohSnap() = {
-    //https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
       head(
         meta(charset := "utf-8"),
