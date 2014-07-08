@@ -21,7 +21,7 @@ object Html {
         meta(charset := "utf-8"),
         title("Kiwi Vesper's Help"),
         link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
-        link(rel:= "shortcut icon", href:="https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico")
+        link(rel:= "shortcut icon", href:="https://raw.githubusercontent.com/chefedited/chefedited.github.io/master/public/favicon2.ico")
       ),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
@@ -51,7 +51,7 @@ object Html {
         meta(charset := "utf-8"),
         title("Kiwi Vesper's Help"),
         link(rel:= "stylesheet", href:="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"),
-        link(rel:= "shortcut icon", href:="https://www.dropbox.com/s/y72a0qjzr2nb7ih/favicon.ico")
+        link(rel:= "shortcut icon", href:="https://raw.githubusercontent.com/chefedited/chefedited.github.io/master/public/favicon2.ico")
       ),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
