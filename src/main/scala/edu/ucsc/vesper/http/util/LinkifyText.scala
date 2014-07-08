@@ -23,7 +23,7 @@ object LinkifyText {
 
 
   def linkForAnalyze(user: String) = "http://twitter.com/" + user
-  def hashTagForAnalyze(user: String) = "https://twitter.com/search/?src=typd&q=%23" + user
+  def hashTagForAnalyze(tag: String) = "https://twitter.com/search/?src=typd&q=%23" + tag
 
   def createLinks(text: String) = LinkifyText.replaceHashtagCode(
     LinkifyText.replaceAtCode(
