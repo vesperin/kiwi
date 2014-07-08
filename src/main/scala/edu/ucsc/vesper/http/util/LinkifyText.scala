@@ -23,7 +23,7 @@ object LinkifyText {
 
 
   def linkForAnalyze(user: String) = "http://twitter.com/" + user
-  def hashTagForAnalyze(user: String) = "https://twitter.com/search/?src=hash&q=%23" + user
+  def hashTagForAnalyze(user: String) = "https://twitter.com/search/?src=typd&q=%23" + user
 
   def createLinks(text: String) = LinkifyText.replaceHashtagCode(
     LinkifyText.replaceAtCode(
@@ -64,7 +64,7 @@ object LinkifyText {
   }
 
   private def wrapHashtags(text: String) = text.replaceAll(LinkifyText.hashtagsRegex,
-    "<a style='color: black;' href='" + LinkifyText.hashtagUrl + "' target='_blank'>" + hashtagCode + "$1</a>")
+    "<a style='color: black;' href='" + LinkifyText.hashtagUrl + "%20%40codedetour' target='_blank'>" + hashtagCode + "$1</a>")
 
   private def wrapUserLists(text: String): String = {
     val items = getListItems(text) // Example: ("dave/scala", "http://twitter.com/dave/scala")
