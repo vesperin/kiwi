@@ -12,7 +12,7 @@ import twitter4j.{Status, Twitter, TwitterFactory}
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.xml.Unparsed
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -570,6 +570,86 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
+
+  def render(command: String): Future[Unparsed] = {
+    if(!command.contains("id:")) {
+      return Future(ohSnap())
+    }
+
+    def flatResult(res: Option[Result]): Future[List[Code]] = res match {
+      case Some(r) =>
+
+        Future {
+          val answer = List(
+            r.draft,
+            r.info,
+            r.warnings,
+            r.failure,
+            r.sources
+          ).flatten
+
+
+          val result: List[Code] = if (answer == null) List() else answer(0).asInstanceOf[List[Code]]
+
+          result
+        }
+
+      case None    => Future {
+        List()
+      }
+
+    }
+
+    def findRelatedWork(theCode: Option[Code]): Future[List[Code]] = theCode match {
+      case Some(c) =>
+        for {
+          res <- storage.find(ExactlyOne("url", c.url.getOrElse("")))
+          rw  <- flatResult(res)
+        } yield {
+          rw
+        }
+      case None    =>  Future(List())
+    }
+
+    def fetchCode(list: List[Code]): Future[Option[Code]] = {
+      Future {
+        list match {
+          case x :: xs => x match {
+            case c: Code => Some(c)
+            case _=> None
+          }
+
+          case _=> None
+        }
+      }
+    }
+
+
+    def renderBunchOfCode(theCode: Option[Code], relatedWork: List[Code]): Future[Unparsed] = theCode match {
+      case Some(c) => Future(Html.renderCodesnippet(c, relatedWork))
+      case None    => Future(Html.ohSnap())
+    }
+
+    def fetchCodeFromResult(res: Option[Result]): Future[Option[Code]] = {
+      for {
+        flat      <- flatResult(res)
+        theCode   <- fetchCode(flat)
+      } yield {
+        theCode
+      }
+    }
+
+
+    for {
+      theResult   <- eval(command)
+      theCode     <- fetchCodeFromResult(theResult)
+      relatedWork <- findRelatedWork(theCode)
+      unparsed    <- renderBunchOfCode(theCode, relatedWork)
+    } yield {
+      unparsed
+    }
+  }
+
   def eval(command: String): Future[Option[Result]] = {
     eval(Membership(Auth("legolas", passwords("legolas")), Role(Curator, "legolas")), command)
   }
@@ -596,35 +676,12 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     }
   }
 
-  def renderAsHtml(result: Try[Option[Result]]) = {
-    val opt = result.getOrElse(None)
-    val res = opt match {
-      case Some(x) => x
-      case None    => throw new IllegalArgumentException("Expecting Result(Some(List(Code)), but found None")
-    }
-
-    val answer = flatten(res)
-
-    answer match {
-      case x :: xs => x match {
-        case c: Code => page(c)
-        case _=> ohSnap()
-      }
-
-      case _=> ohSnap()
-    }
-  }
-
   def ohSnap() = {
     Html.ohSnap()
   }
 
   def renderHelpPage() =  {
      Html.renderHelp()
-  }
-
-  private def page(theCode: Code) = {
-    Html.renderCodesnippet(theCode)
   }
 
 }

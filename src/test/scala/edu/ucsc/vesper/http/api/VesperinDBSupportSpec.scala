@@ -32,13 +32,13 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
       Put("/kiwi/eval", Command(persist = Some(Persist(
         Code(
           name = "GCD.java",
-          description     = "The greatest common divisor algorithm /by @codedetour.",
+          description     = "Implements GCD algorithm /by @codedetour.",
           content         = "class GCD {\t\t\n\t\tstatic int computeGcd(int a, int b){\n\t\t return BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).intValue(); \n\t\t}\n}",
           elapsedtime     = Some("00:05:00"),
-          tags            = List("CrackingTheCodeInterview"),
+          tags            = List("Slow"),
           datastructures  = List("BigInteger"),
           algorithms      = List("GCD"),
-          refactorings    = List("Rename method"),
+          refactorings    = List("Full clean up"),
           confidence      = 2,
           url             = Some("http://www.programmingtask.com"),
           birthday        = Some(new Date().getTime),

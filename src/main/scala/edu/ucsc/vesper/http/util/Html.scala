@@ -76,7 +76,36 @@ object Html {
     scala.xml.Unparsed(help.toString())
   }
 
-  def renderCodesnippet(theCode: Code) = {
+  // thx to http://aperiodic.net/phil/scala/s-99/
+  def removeAt[A](n: Int, ls: List[A]): (List[A], A) = ls.splitAt(n) match {
+    case (Nil, _) if n < 0 => throw new NoSuchElementException
+    case (preElement, e :: postElement)  => (preElement ::: postElement, e)
+    case (preElement, Nil)               => throw new NoSuchElementException
+  }
+
+
+  // It can be expensive to create a new Random instance every time, so let's
+  // only do it once. thx to http://aperiodic.net/phil/scala/s-99/
+  def randomSelect[A](n: Int, ls: List[A]): List[A] = {
+    def randomSelectR(n: Int, ls: List[A], r: util.Random): List[A] =
+      if (n <= 0) Nil
+      else {
+        val (rest, e) = removeAt(r.nextInt(ls.length), ls)
+        e :: randomSelectR(n - 1, rest, r)
+      }
+    randomSelectR(n, ls, new util.Random)
+  }
+
+  private def printStars(counter: Int): String = {
+    val builder = new StringBuilder
+    for( a <- 1 to counter){
+       builder.append("★")
+    }
+
+    builder.toString()
+  }
+
+  def renderCodesnippet(theCode: Code, relatedWork: List[Code]) = {
     val hrefUrl: String   = theCode.url.getOrElse("#")
     var txtUrl:String     = theCode.url.getOrElse("(Missing URL)")
     txtUrl = txtUrl.stripPrefix("http://")
@@ -98,6 +127,8 @@ object Html {
     }
 
     val codeId: String = theCode.id.getOrElse("vesperized")
+
+    val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
 
 
     val likeButtonSettings: String =
@@ -142,7 +173,7 @@ object Html {
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
           p(`class`:= "main_like")(raw(likeDislikeButtons)),
-          h3(theCode.name + ": ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
+          h3(theCode.name + "("   + printStars(theCode.confidence) + ") : ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
           p(raw(linkified)),
           // code
           div(
@@ -162,6 +193,26 @@ object Html {
             )
           ), // end of comments
 
+          div(
+            h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Related work ", "(", strong(topFiveRelatedCode.size), ")"),
+            div(
+              p("The number of ★ implies how confident the curator is on whether this code snippet can be reused."),
+              ul(
+                if(topFiveRelatedCode.isEmpty)
+                  li("None")
+                else
+                  topFiveRelatedCode.map(c => li(
+                    c.name + "("   + printStars(c.confidence) + "): ",
+                    a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
+                      strong("Click here")
+                    )
+                   )
+                  )
+              )
+            )
+          ), // end of comments
+
+          hr(),
           // footer
           div(id:="footer_wrap", `class`:= "outer")(
             footer(`class`:= "inner")(
