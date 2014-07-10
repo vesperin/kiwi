@@ -55,12 +55,13 @@ trait HtmlRenderer extends Flattener {
   }
 
 
-  private[this] def buildHtml(theCode: Option[Code], relatedWork: List[Code]): Future[Unparsed] = theCode match {
+  private[this] def buildHtml(theCode: Option[Code], relatedWork: List[Code], survey: Boolean): Future[Unparsed] = theCode match {
     case Some(c) => 
       Future(
         Html.renderCodesnippet(
           c, 
-          relatedWork
+          relatedWork,
+          survey
         )
       )
     case None    => 
@@ -79,12 +80,12 @@ trait HtmlRenderer extends Flattener {
     }
   }
 
-   def renderHtml(optionResult: Option[Result]): Future [Unparsed] = {
+   def renderHtml(optionResult: Option[Result], survey: Boolean): Future [Unparsed] = {
     for {
       theCode     <- collectCode(optionResult)
       storage     <- Future(VesperStorage())
       relatedWork <- collectRelatedWork(theCode, storage)
-      unparsed    <- buildHtml(theCode, relatedWork)
+      unparsed    <- buildHtml(theCode, relatedWork, survey)
     } yield {
       unparsed
     }

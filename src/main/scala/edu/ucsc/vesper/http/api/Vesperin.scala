@@ -81,11 +81,16 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
   val render =
     path("render") {
       get {
-        parameter('q){
-          q =>
+        parameters('q, 's ? "on"){
+          // note (Huascar): IntelliJ is detecting an error where there is none
+          // this is how to use parameters in Spray.io
+          (q, s) =>
             detach(){
-              onComplete(interpreter.render(q)){
-                case result => complete(result)
+              onComplete(interpreter.render(q, s)){
+                case result => complete{
+                  println(s)
+                  result
+                }
               }
             }
         }

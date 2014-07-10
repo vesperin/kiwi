@@ -571,17 +571,29 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
 
-  def render(command: String): Future[Unparsed] = {
+  def render(command: String, survey: String): Future[Unparsed] = {
     if(!command.contains("id:")) {
       return Future(ohSnap())
+    }
+
+    def getSurveyValue(survey: String): Future[Boolean] = {
+      Future {
+        val value: Boolean = survey match {
+          case "on" => true
+          case _    => false
+        }
+
+        value
+      }
     }
 
     def createRenderer(): Future[HtmlRenderer] = Future(CodeHtmlRenderer())
 
     for {
+      surveyVal   <- getSurveyValue(survey)
       theResult   <- eval(command)
       renderer    <- createRenderer()
-      theCodeHtml <- renderer.renderHtml(theResult)
+      theCodeHtml <- renderer.renderHtml(theResult, surveyVal)
     } yield {
       theCodeHtml
     }

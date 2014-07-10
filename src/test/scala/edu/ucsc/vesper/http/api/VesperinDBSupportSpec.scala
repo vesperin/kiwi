@@ -71,8 +71,15 @@ class VesperinDBSupportSpec extends Specification with Specs2RouteTest with Vesp
       }
     }
 
-    "render HTML of a single Code Result Set containing matching id for GET request to the root path" in {
+    "render HTML (with survey) of a single Code Result Set containing matching id for GET request to the root path" in {
       Get("/kiwi/render?q=id:89956303-635e-4449-b6a4-ab3cc603143c") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
+
+        status === StatusCodes.OK
+      }
+    }
+
+    "render HTML (without survey) of a single Code Result Set containing matching id for GET request to the root path" in {
+      Get("/kiwi/render?q=id:89956303-635e-4449-b6a4-ab3cc603143c&s=off") ~> addHeader(RawHeader("x-auth-token", "gollum")) ~> sealRoute(vesperRoutes) ~> check {
 
         status === StatusCodes.OK
       }

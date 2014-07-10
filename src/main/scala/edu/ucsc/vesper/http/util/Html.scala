@@ -105,7 +105,7 @@ object Html {
     builder.toString()
   }
 
-  def renderCodesnippet(theCode: Code, relatedWork: List[Code]) = {
+  def renderCodesnippet(theCode: Code, relatedWork: List[Code], survey: Boolean) = {
     val hrefUrl: String   = theCode.url.getOrElse("#")
     var txtUrl:String     = theCode.url.getOrElse("(Missing URL)")
     txtUrl = txtUrl.stripPrefix("http://")
@@ -221,12 +221,17 @@ object Html {
             )
           ), // end of comments
 
-          div(
-            h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
-            p("Help us improve ", strong("vesper"), " by answering this question:"),
-            h4("Did you find this code snippet useful?"),
-            p(`class`:= "main_like")(raw(likeDislikeButtons))
-          ),
+          if(survey) {
+            div(
+              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+              p("Help us improve ", strong("vesper"), " by answering this question:"),
+              h4("Did you find this code snippet useful?"),
+              p(`class`:= "main_like")(raw(likeDislikeButtons))
+            )
+          } else {
+            p()
+          }
+          ,
 
           hr(),
           // footer
