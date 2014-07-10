@@ -178,12 +178,12 @@ object Html {
           """.stripMargin)
       ),
 
-      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
+      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.5rem;",
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
           h3(strong(theCode.name)),
           p(style:="margin-top:-1rem;", small("From ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl))),
-          p(raw(linkified)),
+          p(style:="font-size: 1.6rem;", raw(linkified)),
           // code
           div(
             pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.6rem;") (
