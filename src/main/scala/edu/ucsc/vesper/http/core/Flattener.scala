@@ -18,7 +18,8 @@ trait Flattener {
       command.cleanup,
       command.publish,
       command.find,
-      command.persist
+      command.persist,
+      command.clip
     ).flatten
 
     if (answer == Nil) Nil else answer(0)

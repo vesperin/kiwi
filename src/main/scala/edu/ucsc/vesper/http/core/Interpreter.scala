@@ -94,16 +94,28 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
 
-      def verifySource(source: Source): Future [Option[Result]] = {
-        try {
-          val introspector: Introspector      = refactorer.getIntrospector
-          val problems: Seq[String]           = asScalaBuffer(introspector.verifySource(source))
-          val result: Future [Option[Result]] = if(problems.isEmpty) Future(Some(Result(warnings = Some(List())))) else {
+      def createIntrospector(refactorer: Refactorer): Future[Introspector] = Future(
+        refactorer.getIntrospector
+      )
 
-            val warnings = problems.map(x => Warning(x))
-            Future(Some(Result(warnings = Some(warnings.toList))))
+      def verifySourceWithIntrospector(source: Source, introspector: Introspector): Future[Seq[String]] = Future(
+        asScalaBuffer(introspector.verifySource(source))
+      )
+
+      def collectWarnings(problems: Seq[String]): Future[Seq[Warning]] = Future(problems.map(x => Warning(x)))
+
+      def verifySource(warnings: Seq[Warning]): Future [Option[Result]] = {
+        try {
+
+          Future {
+            val result: Option[Result] = warnings.isEmpty match {
+              case true  =>  Some(Result(warnings = Some(List())))
+              case false =>  Some(Result(warnings = Some(warnings.toList)))
+            }
+
+            result
           }
-          result
+
         } catch {
           case e: RuntimeException =>
             Future(Some(Result(warnings = Some(List(Warning(e.getMessage))))))
@@ -111,8 +123,11 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       }
 
       val inspected = for {
-        vesperSource  <- collectSource(inspect.source)
-        result        <- verifySource(vesperSource)
+        vesperSource          <- collectSource(inspect.source)
+        vesperIntrospector    <- createIntrospector(refactorer)
+        caughtProblems        <- verifySourceWithIntrospector(vesperSource, vesperIntrospector)
+        warnings              <- collectWarnings(caughtProblems)
+        result                <- verifySource(warnings)
       } yield {
         result
       }
@@ -178,6 +193,50 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     val vesperSource: Source  = asSource(delete.source)
 
     removeMember(refactorer, what, where, vesperSource)
+  }
+
+
+  private def evalClip(refactorer: Refactorer, clip: Clip): Future[Option[Result]] = {
+    val where:List[Int]       = clip.where
+    val vesperSource: Source  = asSource(clip.source)
+
+    clipSelection(refactorer, where, vesperSource)
+  }
+
+
+  private def clipSelection(refactorer:Refactorer, where: List[Int], source: Source): Future[Option[Result]] = {
+    try {
+      val createRequest: Future[ChangeRequest] = Future {
+        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+        ChangeRequest.clipSelection(select)
+      }
+
+      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+        var result: Option[Result]  = None
+        commit != null && commit.isValidCommit match {
+          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+        }
+
+        result
+      }
+
+
+      val removed = for {
+        request  <- createRequest
+        change   <- createChange(refactorer, request)
+        commit   <- applyChange(refactorer, change)
+        result   <- produceResult(change, commit)
+      } yield {
+        result
+      }
+
+      removed
+
+    } catch {
+      case e: Exception =>
+        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+    }
   }
 
   private def createRenameChangeRequest(what: String, name: String, selection: SourceSelection): ChangeRequest = {
@@ -621,6 +680,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
+      case clip: Clip               => evalClip(environment, clip)
       case _                        => unknownCommand()
     }
   }
