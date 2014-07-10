@@ -87,10 +87,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
           (q, s) =>
             detach(){
               onComplete(interpreter.render(q, s)){
-                case result => complete{
-                  println(s)
-                  result
-                }
+                case result => complete(result)
               }
             }
         }
