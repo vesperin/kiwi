@@ -158,7 +158,7 @@ trait VesperConversions {
     }
   }
 
-
+  // important ! refactoring's human readable descriptions
   private def simplePast(text: String): String = text match {
     case "Deduplicate"            => "Deduplicated code"
     case "Duplicate code"         => "Deduplicated code"
@@ -181,5 +181,6 @@ trait VesperConversions {
     case "Rename Type"            => "Renamed type"
     case "Rename variable"        => "Renamed local variable"
     case "Delete variable"        => "Removed local variable"
+    case "Clip Code"              => "Clipped code region"
   }
 }

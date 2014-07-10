@@ -183,5 +183,24 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         status === StatusCodes.Unauthorized
       }
     }
+
+
+    "return a clip method request (no dependencies) for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", Command(clip = Some(Clip(source = Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}"), where =  List(31, 496))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Result].draft.get.before mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
+      }
+    }
+
+
+    "return a clip method (with dependencies) request for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", Command(clip = Some(Clip(source = Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString msg = \"Hi!\";\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}\n\t/** {@link Name#boom(String)}**/String baam(String msg){  return msg; }\nString beem(String text){ return boom(text); }}"), where =  List(88, 165))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Result].draft.get.before mustEqual  Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString msg = \"Hi!\";\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}\n\t/** {@link Name#boom(String)}**/String baam(String msg){  return msg; }\nString beem(String text){ return boom(text); }}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString;\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}}")
+      }
+    }
+
   }
 }
