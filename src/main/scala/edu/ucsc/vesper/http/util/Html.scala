@@ -214,9 +214,8 @@ object Html {
                   li("None")
                 else
                   topFiveRelatedCode.map(c => li(
-                    c.name + "("   + printStars(c.confidence) + "): ",
                     a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
-                      strong("Click here")
+                      c.name + " "   + printStars(c.confidence)
                     )
                    )
                   )
