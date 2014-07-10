@@ -5,7 +5,7 @@ import edu.ucsc.vesper.http.domain.Models.{Result, Find, Command}
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait CommandFlattener {
+trait Flattener {
 
   def flatten(command: Command) = {
     val answer = List(

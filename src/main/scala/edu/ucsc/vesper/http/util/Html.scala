@@ -134,9 +134,16 @@ object Html {
     val likeButtonSettings: String =
       """<span class="likebtn-wrapper" """ +
         "data-identifier=\"" + codeId + "\"" +
-        """ data-popup_enabled="false" data-show_dislike_label="true" data-popup_position="bottom"
-          | data-item_url="http://www.vesperin.com/"
-          | data-share_enabled="false"></span>
+        """  data-show_dislike_label="true"
+          |  data-counter_show="false"
+          |  data-popup_enabled="false"
+          |  data-popup_position="bottom"
+          |  data-i18n_like="Yes" data-i18n_dislike="No"
+          |  data-i18n_after_like="Yes" data-i18n_after_dislike="No"
+          |  data-i18n_like_tooltip="Found it useful"
+          |  data-i18n_dislike_tooltip="Found it useless"
+          |  data-i18n_unlike_tooltip="Found it useful"
+          |  data-i18n_undislike_tooltip="Found it useless"></span>
           | <script type="text/javascript" src="//w.likebtn.com/js/w/widget.js" async="async"></script>
         """.stripMargin
 
@@ -172,8 +179,8 @@ object Html {
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
-          p(`class`:= "main_like")(raw(likeDislikeButtons)),
-          h3(theCode.name + "("   + printStars(theCode.confidence) + ") : ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
+          h3(theCode.name + " : ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl)),
+          h5(scalatags.Text.all.title:="Confidence for reuse", printStars(theCode.confidence)),
           p(raw(linkified)),
           // code
           div(
@@ -196,8 +203,10 @@ object Html {
           div(
             h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Related work ", "(", strong(topFiveRelatedCode.size), ")"),
             div(
-              p("The number of ★ implies how confident the curator is on whether this code snippet can be reused."),
-              ul(
+              p("The number of ★ implies how confident the curator is on whether this code snippet can be reused. For example, 1 ★ means ",
+                span(style:="font-style:italic", "no confident;"), " 5 ★ means ",
+                span(style:="font-style:italic", "highly confident"), "."),
+              ol(
                 if(topFiveRelatedCode.isEmpty)
                   li("None")
                 else
@@ -211,6 +220,13 @@ object Html {
               )
             )
           ), // end of comments
+
+          div(
+            h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+            p("Help us improve ", strong("vesper"), " by answering this question:"),
+            h4("Did you find this code snippet useful?"),
+            p(`class`:= "main_like")(raw(likeDislikeButtons))
+          ),
 
           hr(),
           // footer

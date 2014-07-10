@@ -17,7 +17,7 @@ import scala.xml.Unparsed
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Interpreter extends Configuration with VesperConversions with CommandFlattener {
+trait Interpreter extends Configuration with VesperConversions with Flattener {
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
@@ -576,77 +576,14 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       return Future(ohSnap())
     }
 
-    def flatResult(res: Option[Result]): Future[List[Code]] = res match {
-      case Some(r) =>
-
-        Future {
-          val answer = List(
-            r.draft,
-            r.info,
-            r.warnings,
-            r.failure,
-            r.sources
-          ).flatten
-
-
-          val result: List[Code] = if (answer == null) List() else answer(0).asInstanceOf[List[Code]]
-
-          result
-        }
-
-      case None    => Future {
-        List()
-      }
-
-    }
-
-    def findRelatedWork(theCode: Option[Code]): Future[List[Code]] = theCode match {
-      case Some(c) =>
-        for {
-          res <- storage.find(ExactlyOne("url", c.url.getOrElse("")))
-          rw  <- flatResult(res)
-        } yield {
-          rw
-        }
-      case None    =>  Future(List())
-    }
-
-    def fetchCode(list: List[Code]): Future[Option[Code]] = {
-      Future {
-        list match {
-          case x :: xs => x match {
-            case c: Code => Some(c)
-            case _=> None
-          }
-
-          case _=> None
-        }
-      }
-    }
-
-
-    def renderBunchOfCode(theCode: Option[Code], relatedWork: List[Code]): Future[Unparsed] = theCode match {
-      case Some(c) => Future(Html.renderCodesnippet(c, relatedWork))
-      case None    => Future(Html.ohSnap())
-    }
-
-    def fetchCodeFromResult(res: Option[Result]): Future[Option[Code]] = {
-      for {
-        flat      <- flatResult(res)
-        theCode   <- fetchCode(flat)
-      } yield {
-        theCode
-      }
-    }
-
+    def createRenderer(): Future[HtmlRenderer] = Future(CodeHtmlRenderer())
 
     for {
       theResult   <- eval(command)
-      theCode     <- fetchCodeFromResult(theResult)
-      relatedWork <- findRelatedWork(theCode)
-      unparsed    <- renderBunchOfCode(theCode, relatedWork)
+      renderer    <- createRenderer()
+      theCodeHtml <- renderer.renderHtml(theResult)
     } yield {
-      unparsed
+      theCodeHtml
     }
   }
 
