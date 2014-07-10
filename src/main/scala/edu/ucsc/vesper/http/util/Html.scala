@@ -178,7 +178,7 @@ object Html {
           """.stripMargin)
       ),
 
-      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.5rem;",
+      body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         // main
         div(`class`:="banner well", style:="background: #ffffff; border: none")(
           h3(strong(theCode.name)),
