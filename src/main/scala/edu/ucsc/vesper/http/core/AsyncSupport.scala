@@ -9,5 +9,5 @@ import java.util.concurrent.TimeUnit._
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 trait AsyncSupport extends AskSupport {
-  implicit val timeout: Timeout = Duration(3, SECONDS)
+  implicit val timeout: Timeout = Duration(2, SECONDS)
 }

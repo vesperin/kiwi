@@ -12,12 +12,12 @@ import twitter4j.{Status, Twitter, TwitterFactory}
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.xml.Unparsed
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Interpreter extends Configuration with VesperConversions with CommandFlattener {
+trait Interpreter extends Configuration with VesperConversions with Flattener {
 
   implicit def executionContext = ExecutionContext.Implicits.global
 
@@ -94,16 +94,28 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
 
-      def verifySource(source: Source): Future [Option[Result]] = {
-        try {
-          val introspector: Introspector      = refactorer.getIntrospector
-          val problems: Seq[String]           = asScalaBuffer(introspector.verifySource(source))
-          val result: Future [Option[Result]] = if(problems.isEmpty) Future(Some(Result(warnings = Some(List())))) else {
+      def createIntrospector(refactorer: Refactorer): Future[Introspector] = Future(
+        refactorer.getIntrospector
+      )
 
-            val warnings = problems.map(x => Warning(x))
-            Future(Some(Result(warnings = Some(warnings.toList))))
+      def verifySourceWithIntrospector(source: Source, introspector: Introspector): Future[Seq[String]] = Future(
+        asScalaBuffer(introspector.verifySource(source))
+      )
+
+      def collectWarnings(problems: Seq[String]): Future[Seq[Warning]] = Future(problems.map(x => Warning(x)))
+
+      def verifySource(warnings: Seq[Warning]): Future [Option[Result]] = {
+        try {
+
+          Future {
+            val result: Option[Result] = warnings.isEmpty match {
+              case true  =>  Some(Result(warnings = Some(List())))
+              case false =>  Some(Result(warnings = Some(warnings.toList)))
+            }
+
+            result
           }
-          result
+
         } catch {
           case e: RuntimeException =>
             Future(Some(Result(warnings = Some(List(Warning(e.getMessage))))))
@@ -111,8 +123,11 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       }
 
       val inspected = for {
-        vesperSource  <- collectSource(inspect.source)
-        result        <- verifySource(vesperSource)
+        vesperSource          <- collectSource(inspect.source)
+        vesperIntrospector    <- createIntrospector(refactorer)
+        caughtProblems        <- verifySourceWithIntrospector(vesperSource, vesperIntrospector)
+        warnings              <- collectWarnings(caughtProblems)
+        result                <- verifySource(warnings)
       } yield {
         result
       }
@@ -178,6 +193,50 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
     val vesperSource: Source  = asSource(delete.source)
 
     removeMember(refactorer, what, where, vesperSource)
+  }
+
+
+  private def evalClip(refactorer: Refactorer, clip: Clip): Future[Option[Result]] = {
+    val where:List[Int]       = clip.where
+    val vesperSource: Source  = asSource(clip.source)
+
+    clipSelection(refactorer, where, vesperSource)
+  }
+
+
+  private def clipSelection(refactorer:Refactorer, where: List[Int], source: Source): Future[Option[Result]] = {
+    try {
+      val createRequest: Future[ChangeRequest] = Future {
+        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
+        ChangeRequest.clipSelection(select)
+      }
+
+      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
+        var result: Option[Result]  = None
+        commit != null && commit.isValidCommit match {
+          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+        }
+
+        result
+      }
+
+
+      val removed = for {
+        request  <- createRequest
+        change   <- createChange(refactorer, request)
+        commit   <- applyChange(refactorer, change)
+        result   <- produceResult(change, commit)
+      } yield {
+        result
+      }
+
+      removed
+
+    } catch {
+      case e: Exception =>
+        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+    }
   }
 
   private def createRenameChangeRequest(what: String, name: String, selection: SourceSelection): ChangeRequest = {
@@ -438,8 +497,8 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
-      case Some(cid) => Future("""http://www.cookandstuff.com/vesper/render?q=id:""" + cid + """&auth_token=legolas""")
-      case None      => Future("""http://www.cookandstuff.com/vesper/help""")
+      case Some(cid) => Future("""http://www.cookandstuff.com/kiwi/render?q=id:""" + cid)
+      case None      => Future("""http://www.cookandstuff.com/kiwi/help""")
     }
 
     def getDescription(code: Code): Future[String] = Future(code.description)
@@ -570,6 +629,39 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
 
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
+
+  def render(command: String, survey: String): Future[Unparsed] = {
+    if(!command.contains("id:")) {
+      return Future(ohSnap())
+    }
+
+    def getSurveyValue(survey: String): Future[Boolean] = {
+      Future {
+        val value: Boolean = survey match {
+          case "on" => true
+          case _    => false
+        }
+
+        value
+      }
+    }
+
+    def createRenderer(): Future[HtmlRenderer] = Future(CodeHtmlRenderer())
+
+    for {
+      surveyVal   <- getSurveyValue(survey)
+      theResult   <- eval(command)
+      renderer    <- createRenderer()
+      theCodeHtml <- renderer.renderHtml(theResult, surveyVal)
+    } yield {
+      theCodeHtml
+    }
+  }
+
+  def eval(command: String): Future[Option[Result]] = {
+    eval(Membership(Auth("legolas", passwords("legolas")), Role(Curator, "legolas")), command)
+  }
+
   def eval(membership: Membership, command: Command): Future[Option[Result]] = {
     val who: Auth               = membership.auth
     val what: Role              = membership.role
@@ -588,31 +680,17 @@ trait Interpreter extends Configuration with VesperConversions with CommandFlatt
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
+      case clip: Clip               => evalClip(environment, clip)
       case _                        => unknownCommand()
     }
   }
 
-  def renderAsHtml(result: Try[Option[Result]]) = {
-    val opt = result.getOrElse(None)
-    val res = opt match {
-      case Some(x) => x
-      case None    => throw new IllegalArgumentException("Expecting Result(Some(List(Code)), but found None")
-    }
-
-    val answer = flatten(res)
-
-    answer match {
-      case x :: xs => x match {
-        case c: Code => page(c)
-        case _=> <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
-      }
-
-      case _=> <html><div><h3>Oh, snap! We have nothing to render!</h3></div></html>
-    }
+  def ohSnap() = {
+    Html.ohSnap()
   }
 
-  private def page(theCode: Code) = {
-    Html(theCode).createHtmlElement()
+  def renderHelpPage() =  {
+     Html.renderHelp()
   }
 
 }

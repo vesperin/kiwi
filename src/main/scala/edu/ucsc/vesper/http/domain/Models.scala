@@ -97,6 +97,8 @@ object Models {
   case class Publish(drafts: List[Draft])
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Persist(source: Code)
+  // """{"source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"}, "where": ["123", "132"]}"""
+  case class Clip(source: Code, where: List[Int])
 
   case class Body(kind: String, id: String, longUrl: String)
   case class LongURL(longUrl: String)
@@ -143,7 +145,8 @@ object Models {
         cleanup: Option[Cleanup]          = None,
         publish: Option[Publish]          = None,
         persist: Option[Persist]          = None,
-        find: Option[Find]                = None
+        find: Option[Find]                = None,
+        clip: Option[Clip]                = None
   )
 
 
@@ -231,6 +234,10 @@ object Models {
     implicit val persistFormats = jsonFormat1(Persist.apply)
   }
 
+  object Clip extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val clipFormats = jsonFormat2(Clip.apply)
+  }
+
   object Warning extends DefaultJsonProtocol with SprayJsonSupport {
     implicit val failureFormats = jsonFormat1(Warning.apply)
   }
@@ -252,6 +259,6 @@ object Models {
   }
 
   object Command extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val requestFormats = jsonFormat10(Command.apply)
+    implicit val requestFormats = jsonFormat11(Command.apply)
   }
 }
