@@ -97,7 +97,7 @@ object Models {
   case class Publish(drafts: List[Draft])
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Persist(source: Code)
-  // """{"where": ["123", "132"], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
+  // """{"source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"}, "where": ["123", "132"]}"""
   case class Clip(source: Code, where: List[Int])
 
   case class Body(kind: String, id: String, longUrl: String)
