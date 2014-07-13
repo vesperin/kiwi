@@ -186,6 +186,7 @@ object Html {
               |  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
               |
               |  ga('create', 'UA-52736669-3', 'auto');
+              |  ga('require', 'displayfeatures');
               |  ga('send', 'pageview', 'page path');
               |
               |</script>
