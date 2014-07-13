@@ -128,7 +128,7 @@ object Html {
     }
 
     val codeId: String    = theCode.id.getOrElse("vesperized")
-    val birthdate: String = DateTime(theCode.birthday.getOrElse(System.currentTimeMillis)).toIsoDateString
+    val birthdate: String = DateTime(theCode.birthday.getOrElse(System.currentTimeMillis)).toRfc1123DateTimeString
 
     val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
 
