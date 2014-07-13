@@ -244,6 +244,19 @@ object Html {
                 strong()("Vesper"),
                 ", a tool maintained by ",
                 a(style:="color: black;", href:="https://github.com/hsanchez")("Huascar A. Sanchez")
+              ),
+
+              // tracking each page with google analytics
+              // thx to
+              // https://github.com/igrigorik/ga-beacon
+              // http://www.sitepoint.com/using-beacon-image-github-website-email-analytics/
+              p(
+                a(href:="https://github.com/igrigorik/ga-beacon")(
+                  img(
+                    src:= "https://ga-beacon.appspot.com/UA-52736669-3/kiwi/render?q=id:" + codeId + "?pixel",
+                    alt:= "Analytics", style:= "max-width:100%;"
+                  )
+                )
               )
             )
           ) // end of footer
