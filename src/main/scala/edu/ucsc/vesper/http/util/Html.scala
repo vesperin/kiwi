@@ -177,8 +177,8 @@ object Html {
             |.main_like{margin-bottom:10px; text-align:left;}
             |
             |.container {
-            |	max-width: 96rem;
-            |	min-width: 96rem;
+            |	max-width: 92rem;
+            |	min-width: 92rem;
             |	margin:auto;
             |}
             |
