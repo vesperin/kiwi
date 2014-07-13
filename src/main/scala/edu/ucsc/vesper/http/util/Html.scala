@@ -191,7 +191,9 @@ object Html {
                 style:="display: block; font-size: 1.4rem; padding: 3px 4px 13px 4px; top: 0; background: rgb(90%,90%,90%);")(
                 raw(new SourceFormatter().format(theCode.content))
               )
-            )
+            ),
+
+            h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence))
           ), // end of code
 
           // comments
@@ -201,7 +203,6 @@ object Html {
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
           ), // end of comments
-          h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence)),
           if(survey) {
             div(
               h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
