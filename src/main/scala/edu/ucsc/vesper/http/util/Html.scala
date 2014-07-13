@@ -204,7 +204,7 @@ object Html {
 
           if(survey) {
             div(
-              h5(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
               p("Help us improve ", strong("vesper"), " by answering this question:"),
               h4("Did you find this code snippet useful?"),
               p(`class`:= "main_like")(raw(likeDislikeButtons))
