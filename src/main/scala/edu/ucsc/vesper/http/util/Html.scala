@@ -253,7 +253,7 @@ object Html {
               p(
                 a(href:="https://github.com/igrigorik/ga-beacon")(
                   img(
-                    src:= "https://ga-beacon.appspot.com/UA-52736669-3/kiwi/render/" + codeId + "?pixel&dt=" + theCode.name.stripSuffix(".java").toLowerCase,
+                    src:= "https://ga-beacon.appspot.com/UA-52736669-3/kiwi/render/" + codeId + "?pixel%26dt=" + theCode.name.stripSuffix(".java").toLowerCase,
                     alt:= "Analytics", style:= "max-width:100%;"
                   )
                 )
