@@ -2,6 +2,7 @@ package edu.ucsc.vesper.http.util
 
 import edu.ucsc.refactor.util.SourceFormatter
 import edu.ucsc.vesper.http.domain.Models.Code
+import spray.http.DateTime
 
 import scalatags.Text.all._
 import scalatags.Text.tags2.title
@@ -126,7 +127,8 @@ object Html {
         + ".")
     }
 
-    val codeId: String = theCode.id.getOrElse("vesperized")
+    val codeId: String    = theCode.id.getOrElse("vesperized")
+    val birthdate: String = DateTime(theCode.birthday.getOrElse(System.currentTimeMillis)).toRfc1123DateTimeString
 
     val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
 
@@ -174,24 +176,30 @@ object Html {
             |
             |.main_like{margin-bottom:10px; text-align:left;}
             |
+            |.container {
+            |	max-width: 92rem;
+            |	min-width: 92rem;
+            |	margin:auto;
+            |}
             |
           """.stripMargin)
       ),
 
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.5rem;",
         // main
-        div(`class`:="banner well", style:="background: #ffffff; border: none")(
+        div(`class`:="container", style:="background: #ffffff; border: none")(
           h3(strong(theCode.name)),
           p(style:="margin-top:-1rem;", small("From ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl))),
           p(style:="font-size: 1.6rem;", raw(linkified)),
           // code
           div(
-            pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.6rem;") (
+            pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.3rem;") (
               code(id:=codeId, `class`:="language-clike",
                 style:="display: block; font-size: 1.4rem; padding: 3px 4px 13px 4px; top: 0; background: rgb(90%,90%,90%);")(
                 raw(new SourceFormatter().format(theCode.content))
               )
             ),
+
             h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence))
           ), // end of code
 
@@ -202,6 +210,17 @@ object Html {
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
           ), // end of comments
+          if(survey) {
+            div(
+              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+              p("Help us improve ", strong("vesper"), " by answering this question:"),
+              h4("Did you find this code snippet useful?"),
+              p(`class`:= "main_like")(raw(likeDislikeButtons))
+            )
+          } else {
+            p()
+          }
+          ,
 
           div(
             h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Related work ", "(", strong(topFiveRelatedCode.size), ")"),
@@ -215,25 +234,13 @@ object Html {
                 else
                   topFiveRelatedCode.map(c => li(
                     a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
-                      c.name + " "   + printStars(c.confidence)
+                      String.format("%-32s %s", c.name, printStars(c.confidence)) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
                     )
                    )
                   )
               )
             )
           ), // end of comments
-
-          if(survey) {
-            div(
-              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
-              p("Help us improve ", strong("vesper"), " by answering this question:"),
-              h4("Did you find this code snippet useful?"),
-              p(`class`:= "main_like")(raw(likeDislikeButtons))
-            )
-          } else {
-            p()
-          }
-          ,
 
           hr(),
           // footer
@@ -244,6 +251,19 @@ object Html {
                 strong()("Vesper"),
                 ", a tool maintained by ",
                 a(style:="color: black;", href:="https://github.com/hsanchez")("Huascar A. Sanchez")
+              ),
+
+              // tracking each page with google analytics
+              // thx to
+              // https://github.com/igrigorik/ga-beacon
+              // http://www.sitepoint.com/using-beacon-image-github-website-email-analytics/
+              p(
+                a(href:="https://github.com/igrigorik/ga-beacon")(
+                  img(
+                    src:= "https://ga-beacon.appspot.com/UA-52736669-3/kiwi/render/" + codeId + "?pixel&dt=" + theCode.name.stripSuffix(".java").toLowerCase,
+                    alt:= "Analytics", style:= "max-width:100%;"
+                  )
+                )
               )
             )
           ) // end of footer
