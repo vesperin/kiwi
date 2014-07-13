@@ -229,7 +229,7 @@ object Html {
                 else
                   topFiveRelatedCode.map(c => li(
                     a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
-                      c.name + " "   + printStars(c.confidence) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
+                      String.format("%-32s %s", c.name, printStars(c.confidence)) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
                     )
                    )
                   )
