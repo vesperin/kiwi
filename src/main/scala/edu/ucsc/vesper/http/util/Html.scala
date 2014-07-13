@@ -187,7 +187,7 @@ object Html {
               |
               |  ga('create', 'UA-52736669-3', 'auto');
               |  ga('require', 'displayfeatures');
-              |  ga('send', 'pageview');
+              |  ga('send', 'pageview', 'page path');
               |
               |</script>
             """.stripMargin)
