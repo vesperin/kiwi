@@ -185,12 +185,13 @@ object Html {
               |  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
               |  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
               |
-              |  ga('create', 'UA-52736669-3', 'auto');
+              |  ga('create', 'UA-52736669-3', 'cookandstuff.com/kiwi/render/c121eda4-48a3-4167-ab07-eeb8dccb6cfa');
               |  ga('require', 'displayfeatures');
               |  ga('send', 'pageview', 'page path');
               |
               |</script>
-            """.stripMargin)
+            """.stripMargin
+          )
       ),
 
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.5rem;",
