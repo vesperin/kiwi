@@ -201,7 +201,7 @@ object Html {
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
           ), // end of comments
-
+          h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence)),
           if(survey) {
             div(
               h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
