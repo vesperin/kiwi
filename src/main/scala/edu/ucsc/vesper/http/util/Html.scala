@@ -2,6 +2,7 @@ package edu.ucsc.vesper.http.util
 
 import edu.ucsc.refactor.util.SourceFormatter
 import edu.ucsc.vesper.http.domain.Models.Code
+import spray.http.DateTime
 
 import scalatags.Text.all._
 import scalatags.Text.tags2.title
@@ -126,7 +127,8 @@ object Html {
         + ".")
     }
 
-    val codeId: String = theCode.id.getOrElse("vesperized")
+    val codeId: String    = theCode.id.getOrElse("vesperized")
+    val birthdate: String = DateTime(theCode.birthday.getOrElse(System.currentTimeMillis)).toIsoDateString
 
     val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
 
@@ -227,7 +229,7 @@ object Html {
                 else
                   topFiveRelatedCode.map(c => li(
                     a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
-                      c.name + " "   + printStars(c.confidence)
+                      c.name + " "   + printStars(c.confidence) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
                     )
                    )
                   )
