@@ -176,19 +176,24 @@ object Html {
             |
             |.main_like{margin-bottom:10px; text-align:left;}
             |
+            |.container {
+            |	max-width: 96rem;
+            |	min-width: 96rem;
+            |	margin:auto;
+            |}
             |
           """.stripMargin)
       ),
 
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.5rem;",
         // main
-        div(`class`:="banner well", style:="background: #ffffff; border: none")(
+        div(`class`:="container", style:="background: #ffffff; border: none")(
           h3(strong(theCode.name)),
           p(style:="margin-top:-1rem;", small("From ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl))),
           p(style:="font-size: 1.6rem;", raw(linkified)),
           // code
           div(
-            pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.6rem;") (
+            pre(`class`:="line-numbers", style:= "border: 1px dashed #ddd; bottom:5px; background: rgb(90%,90%,90%); font-size: 1.3rem;") (
               code(id:=codeId, `class`:="language-clike",
                 style:="display: block; font-size: 1.4rem; padding: 3px 4px 13px 4px; top: 0; background: rgb(90%,90%,90%);")(
                 raw(new SourceFormatter().format(theCode.content))
