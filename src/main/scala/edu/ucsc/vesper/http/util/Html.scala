@@ -192,7 +192,16 @@ object Html {
                 raw(new SourceFormatter().format(theCode.content))
               )
             ),
-            h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence))
+            h5(scalatags.Text.all.title:="Confidence for reuse", "The level of confidence on whether this code can be reused is ", printStars(theCode.confidence)),
+            if(survey) {
+              div(
+                p("Help us improve ", strong("vesper"), " by answering this question:"),
+                h4("Did you find this code snippet useful?"),
+                p(`class`:= "main_like")(raw(likeDislikeButtons))
+              )
+            } else {
+              p()
+            }
           ), // end of code
 
           // comments
@@ -223,17 +232,17 @@ object Html {
             )
           ), // end of comments
 
-          if(survey) {
-            div(
-              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
-              p("Help us improve ", strong("vesper"), " by answering this question:"),
-              h4("Did you find this code snippet useful?"),
-              p(`class`:= "main_like")(raw(likeDislikeButtons))
-            )
-          } else {
-            p()
-          }
-          ,
+//          if(survey) {
+//            div(
+//              h5(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+//              p("Help us improve ", strong("vesper"), " by answering this question:"),
+//              h4("Did you find this code snippet useful?"),
+//              p(`class`:= "main_like")(raw(likeDislikeButtons))
+//            )
+//          } else {
+//            p()
+//          }
+//          ,
 
           hr(),
           // footer
