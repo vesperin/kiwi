@@ -495,6 +495,23 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     }
   }
 
+  private def limitWords(builder: StringBuilder, words: List[String], visited: mutable.Set[String], limit: Int) = {
+
+    val BLANK     = " "
+
+    for(w <- words){
+      val tweetCount = builder.size
+      val remainder  = limit - tweetCount
+
+      val ht        = "#" + w
+      val lookAhead = remainder - (BLANK + ht).length
+      if(lookAhead >= 0 && !visited.contains(ht)){
+        builder.append(BLANK).append(ht)
+        visited.add(ht)
+      }
+    }
+  }
+
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
@@ -534,32 +551,10 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
         builder.append("#Java ")
         builder.append(confidence)
 
-        var lookAheadLen = 0
-        for(a <- algorithms){
-          lookAheadLen = (builder.toString() + "#" + a).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + a)){
-            builder.append(" #").append(a)
-            visited.add("#" + a)
-          }
-        }
 
-        lookAheadLen = 0
-        for(d <- datastructures){
-          lookAheadLen = (builder.toString() + "#" + d).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + d)){
-            builder.append(" #").append(d)
-            visited.add("#" + d)
-          }
-        }
-
-        lookAheadLen = 0
-        for(t <- tags){
-          lookAheadLen = (builder.toString() + "#" + t).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + t)){
-            builder.append(" #").append(t)
-            visited.add("#" + t)
-          }
-        }
+        limitWords(builder, algorithms, visited, 140)
+        limitWords(builder, datastructures, visited, 140)
+        limitWords(builder, tags, visited, 140)
 
         builder.toString()
 
