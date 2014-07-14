@@ -135,8 +135,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       inspected
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
 
   }
@@ -182,8 +181,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       removed
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
   }
 
@@ -234,8 +232,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       removed
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
   }
 
@@ -281,8 +278,12 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       renamed
 
     } catch {
-      case e: Exception => Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception => throwFailure(e.getMessage)
     }
+  }
+
+  private def throwFailure(message: String): Future[Option[Result]] = {
+    Future(Some(Result(failure = Some(Failure(message)))))
   }
 
   private def evalRename(refactorer: Refactorer, rename: Rename): Future[Option[Result]] = {
@@ -494,6 +495,23 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     }
   }
 
+  private def limitWords(builder: StringBuilder, words: List[String], visited: mutable.Set[String], limit: Int) = {
+
+    val BLANK     = " "
+
+    for(w <- words){
+      val tweetCount = builder.size
+      val remainder  = limit - tweetCount
+
+      val ht        = "#" + w
+      val lookAhead = remainder - (BLANK + ht).length
+      if(lookAhead >= 0 && !visited.contains(ht)){
+        builder.append(BLANK).append(ht)
+        visited.add(ht)
+      }
+    }
+  }
+
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
@@ -533,32 +551,10 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
         builder.append("#Java ")
         builder.append(confidence)
 
-        var lookAheadLen = 0
-        for(a <- algorithms){
-          lookAheadLen = (builder.toString() + "#" + a).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + a)){
-            builder.append(" #").append(a)
-            visited.add("#" + a)
-          }
-        }
 
-        lookAheadLen = 0
-        for(d <- datastructures){
-          lookAheadLen = (builder.toString() + "#" + d).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + d)){
-            builder.append(" #").append(d)
-            visited.add("#" + d)
-          }
-        }
-
-        lookAheadLen = 0
-        for(t <- tags){
-          lookAheadLen = (builder.toString() + "#" + t).length
-          if(builder.length < 140 && lookAheadLen <= 140 && !visited.contains("#" + t)){
-            builder.append(" #").append(t)
-            visited.add("#" + t)
-          }
-        }
+        limitWords(builder, algorithms, visited, 140)
+        limitWords(builder, datastructures, visited, 140)
+        limitWords(builder, tags, visited, 140)
 
         builder.toString()
 
@@ -616,13 +612,19 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name)))))))
     }
 
-    for {
-      code        <- storage.persist(persist.source)
-      tweetedCode <- tryTweeting(code)
-      result      <- produceResult(tweetedCode)
-    } yield {
-      result
+
+    try {
+      for {
+        code        <- storage.persist(persist.source)
+        tweetedCode <- tryTweeting(code)
+        result      <- produceResult(tweetedCode)
+      } yield {
+        result
+      }
+    } catch {
+      case e: Exception =>  throwFailure(e.getMessage)
     }
+
   }
 
   private[core] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
