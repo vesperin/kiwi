@@ -135,8 +135,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       inspected
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
 
   }
@@ -182,8 +181,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       removed
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
   }
 
@@ -234,8 +232,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       removed
 
     } catch {
-      case e: Exception =>
-        Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception =>  throwFailure(e.getMessage)
     }
   }
 
@@ -281,8 +278,12 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       renamed
 
     } catch {
-      case e: Exception => Future(Some(Result(failure = Some(Failure(e.getMessage)))))
+      case e: Exception => throwFailure(e.getMessage)
     }
+  }
+
+  private def throwFailure(message: String): Future[Option[Result]] = {
+    Future(Some(Result(failure = Some(Failure(message)))))
   }
 
   private def evalRename(refactorer: Refactorer, rename: Rename): Future[Option[Result]] = {
@@ -616,13 +617,19 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name)))))))
     }
 
-    for {
-      code        <- storage.persist(persist.source)
-      tweetedCode <- tryTweeting(code)
-      result      <- produceResult(tweetedCode)
-    } yield {
-      result
+
+    try {
+      for {
+        code        <- storage.persist(persist.source)
+        tweetedCode <- tryTweeting(code)
+        result      <- produceResult(tweetedCode)
+      } yield {
+        result
+      }
+    } catch {
+      case e: Exception =>  throwFailure(e.getMessage)
     }
+
   }
 
   private[core] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
