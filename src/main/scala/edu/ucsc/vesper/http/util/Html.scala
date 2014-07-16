@@ -133,24 +133,6 @@ object Html {
     val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
 
 
-    val likeButtonSettings: String =
-      """<span class="likebtn-wrapper" """ +
-        "data-identifier=\"" + codeId + "\"" +
-        """  data-show_dislike_label="true"
-          |  data-counter_show="false"
-          |  data-popup_enabled="false"
-          |  data-popup_position="bottom"
-          |  data-i18n_like="Yes" data-i18n_dislike="No"
-          |  data-i18n_after_like="Yes" data-i18n_after_dislike="No"
-          |  data-i18n_like_tooltip="Found it useful"
-          |  data-i18n_dislike_tooltip="Found it useless"
-          |  data-i18n_unlike_tooltip="Found it useful"
-          |  data-i18n_undislike_tooltip="Found it useless"></span>
-          | <script type="text/javascript" src="//w.likebtn.com/js/w/widget.js" async="async"></script>
-        """.stripMargin
-
-    val likeDislikeButtons: String = likeButtonSettings
-
     val codesnippet = html(
       style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;",
       head(
@@ -174,12 +156,50 @@ object Html {
             |	background: rgb(90%,90%,90%);
             |}
             |
-            |.main_like{margin-bottom:10px; text-align:left;}
-            |
             |.container {
             |	max-width: 92rem;
             |	min-width: 92rem;
             |	margin:auto;
+            |}
+            |
+            |.btn-inverse {
+            |    color: #ffffff;
+            |    background-color: #34495e;
+            |}
+            |.btn-inverse:hover,
+            |.btn-inverse:focus,
+            |.btn-inverse:active,
+            |.btn-inverse.active,
+            |.open .dropdown-toggle.btn-inverse {
+            |    color: #ffffff;
+            |    background-color: #415b76;
+            |    border-color: #415b76;
+            |}
+            |.btn-inverse:active,
+            |.btn-inverse.active,
+            |.open .dropdown-toggle.btn-inverse {
+            |    background: #2c3e50;
+            |    border-color: #2c3e50;
+            |}
+            |.btn-inverse.disabled,
+            |.btn-inverse[disabled],
+            |fieldset[disabled] .btn-inverse,
+            |.btn-inverse.disabled:hover,
+            |.btn-inverse[disabled]:hover,
+            |fieldset[disabled] .btn-inverse:hover,
+            |.btn-inverse.disabled:focus,
+            |.btn-inverse[disabled]:focus,
+            |fieldset[disabled] .btn-inverse:focus,
+            |.btn-inverse.disabled:active,
+            |.btn-inverse[disabled]:active,
+            |fieldset[disabled] .btn-inverse:active,
+            |.btn-inverse.disabled.active,
+            |.btn-inverse[disabled].active,
+            |fieldset[disabled] .btn-inverse.active {
+            |    /*background-color: #34495e;*/
+            |    /*border-color: #34495e;*/
+            |    background-color: #d6dbdf;
+            |    border-color:#d6dbdf;
             |}
             |
           """.stripMargin)
@@ -210,17 +230,6 @@ object Html {
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
           ), // end of comments
-          if(survey) {
-            div(
-              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
-              p("Help us improve ", strong("vesper"), " by answering this question:"),
-              h4("Did you find this code snippet useful?"),
-              p(`class`:= "main_like")(raw(likeDislikeButtons))
-            )
-          } else {
-            p()
-          }
-          ,
 
           div(
             h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Related work ", "(", strong(topFiveRelatedCode.size), ")"),
@@ -240,7 +249,20 @@ object Html {
                   )
               )
             )
-          ), // end of comments
+          ), // end of related work
+
+          if(survey) {
+            div(
+              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+              p("Help us improve ", strong("vesper"), " by taking the following survey:"),
+              p(raw("""<a class="typeform-share btn btn-sm btn-inverse" href="http://goo.gl/mYvhbW" data-mode="1" target="_blank">Launch me!</a>"""))
+            )
+          } else {
+            p()
+          }
+          ,
+
+          // survey
 
           hr(),
           // footer
@@ -310,6 +332,28 @@ object Html {
             |  });
             |
             |   }(window.jQuery))
+            |
+            |
+            |
+            |  (function () {
+            |    var qs, js, q, s, d = document, gi = d.getElementById, ce = d.createElement, gt = d.getElementsByTagName, id = 'typef_orm', b = 'https://s3-eu-west-1.amazonaws.com/share.typeform.com/';
+            |    if (!gi.call(d, id)) {
+            |        js = ce.call(d, 'script');
+            |        js.id = id;
+            |        js.src = b + 'share.js';
+            |        q = gt.call(d, 'script')[0];
+            |        q.parentNode.insertBefore(js, q)
+            |    }
+            |    id = id + '_';
+            |    if (!gi.call(d, id)) {
+            |        qs = ce.call(d, 'link');
+            |        qs.rel = 'stylesheet';
+            |        qs.id = id;
+            |        qs.href = b + 'share-button.css';
+            |        s = gt.call(d, 'head')[0];
+            |        s.appendChild(qs, s)
+            |    }
+            |  })()
             |
             |
           """.stripMargin)
