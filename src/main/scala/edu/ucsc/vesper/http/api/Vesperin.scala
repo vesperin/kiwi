@@ -75,9 +75,9 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
-  val index = pathPrefix("html" / Rest) { fileName =>
+  val index = path("") {
     get {
-      getFromResource(s"html/$fileName")
+      getFromResource("html/index.html")
     }
   }
 
