@@ -515,8 +515,8 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
-      case Some(cid) => Future("""http://www.cookandstuff.com/kiwi/render?q=id:""" + cid)
-      case None      => Future("""http://www.cookandstuff.com/kiwi/help""")
+      case Some(cid) => Future("""http://www.vesperin.com/kiwi/render?q=id:""" + cid)
+      case None      => Future("""http://www.vesperin.com/kiwi/help""")
     }
 
     def getDescription(code: Code): Future[String] = Future(code.description)
