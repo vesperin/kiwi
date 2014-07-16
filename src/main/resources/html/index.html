@@ -2,29 +2,259 @@
 <head>
     <meta charset="utf-8"/>
     <title>Kiwi Vesper's Help</title>
-    <link rel="stylesheet" href="https://raw.githubusercontent.com/hsanchez/hsanchez.github.io/master/static/style.css"/>
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
-    <link rel="shortcut icon"
+    <link rel="shortcut icon" type="image/x-icon"
           href="https://raw.githubusercontent.com/chefedited/chefedited.github.io/master/public/favicon2.ico"/>
+    <style>
+    html {
+    /* Setting the baseline font */
+    font-size: 62.5%;
+    -webkit-font-smoothing: antialiased;
+    font-smoothing: antialiased;
+    }
+
+    html, body {
+    min-height: 100%;
+    }
+
+    body {
+    font-family: Courier, monospace;
+    font-size: 1.6rem;
+    padding: 0 2rem;
+    color: rgb(20%,20%,20%);
+    background: rgb(255, 255, 255);
+    }
+
+    h1 {
+    font-size: 24px;
+    margin:1rem 0;
+    }
+
+    h2, h3, h4, h5, h6 {
+    font-size: 1.6rem;
+    font-weight:bold;
+    margin:1rem 0;
+    }
+
+    h1.title:before {
+    font-weight:normal;
+    }
+
+    h1.title {
+    text-indent: -2rem;
+    }
+
+    small {
+    font-size: 1.6rem;
+    }
+
+    h1 {
+    margin:2rem 0;
+    }
+
+    h1 img {
+    border:none;
+    }
+
+    h1 span {
+    margin:auto;
+    display:none;
+    }
+
+    .screencast img {
+    padding-right:1rem;
+    height:1.6rem;
+    vertical-align:-20%;
+    }
+
+    hr {
+    border:none;
+    display:hidden;
+    margin: 2rem 0;
+    clear:both;
+    }
+
+    hr:after {
+    display:block;
+    text-align:center;
+    color: rgb(20%,20%,20%);
+    }
+
+    ul, ol {
+    padding: 0;
+    }
+
+    a {
+    color: black;
+    }
+
+    a:hover {
+    color: black;
+    text-decoration: underline;
+    }
+
+    /*This create a nice border around my picture*/
+    a.fancybox img,
+    span.fancybox img {
+    border: 4px solid #fff;
+    box-shadow: 0px 4px 8px #999;
+    /*-moz-box-shadow: 0px 2px 4px #999;*/
+    /*-webkit-box-shadow: 0px 1px 4px #999;*/
+
+    -webkit-transform: rotate(-2deg);
+    -moz-transform: rotate(-2deg);
+
+    margin: 0px 10px 10px 0px;
+    cursor: default;
+    }
+
+    pre {
+    font-family: Courier, monospace;
+    font-size: 1.6rem;
+    padding:1rem;
+    background: rgb(90%,90%,90%);
+    }
+
+    code {
+    font-family: Courier, monospace;
+    font-size: 1.6rem;
+    background: rgb(90%,90%,90%);
+    }
+
+    #breadcrumb {
+    list-style-type: none;
+    text-transform:capitalize;
+    }
+
+
+    footer ul {
+    padding:0;
+    list-style-type: none;
+    }
+
+    footer li:before {
+    content:none;
+    }
+
+    .container {
+    max-width: 66rem;
+    min-width: 66rem;
+    margin:auto;
+    }
+
+    .col {
+    width:16.5rem;
+    float:left;
+    }
+
+    .col h3 {
+    font-weight:normal;
+    font-style:italic;
+    }
+
+    .col li.mail {
+    list-style: none;
+    }
+
+    .col li.mail span {
+    }
+
+    .col li a:active, .nav_footer li span:active {
+    }
+
+    blockquote {
+    width:52rem;
+    margin:2rem auto;
+    //margin-right:10rem;
+    font-style:italic;
+    clear:both;
+    }
+
+    footer h4 {
+    font-weight:normal;
+    clear:both;
+    text-align:center;
+    font-size:1.25rem;
+    }
+
+    .at300bs {
+    height:0;
+    background:none;
+    }
+
+    @media all and (min-width: 50em) {
+    body {
+    padding-top:2rem;
+    }
+    }
+
+    @media all and (min-width: 70em) {
+    body {
+    padding-top:8rem;
+    }
+    }
+
+    .marketing { margin: 60px 0; }
+    .marketing p + h4 { margin-top: 28px; }
+    </style>
 </head>
 <body>
 <div class="container" >
     <header>
-        <h3>Kiwi-Vesper</h3>
+        <h1 style="font-size: 24px;">Vesperin<br/><small>The home of Kiwi-Vesper</small></h1>
     </header>
-
     <div class="content">
-        <p>Hi, I'm <strong>Kiwi-Vesper</strong>, a companion of Vesper, a code transformation library for Java source code.
-            Kiwi's main responsibility is to wrap Vesper's API as a RESTful service.
-        </p>
-        <p>
-          It was designed and developed by <a style="color: black;" href="http://www.huascarsanchez.com">Huascar Sanchez</a>, as
-          part of his research work on Source Code Curation.
-        </p>
-        <p>
-          You can report any experienced bugs at <a style="color: black;" href= "https://github.com/chefedited/vesper-http">vesper-http</a>.
-        </p>
-        <p>Thanks for visiting!</p>
+        <div class="container marketing">
+
+            <p>Vesper-http, code name <strong>Kiwi-Vesper</strong>, was designed and developed by <a href="http://www.huascarsanchez.com">Huascar Sanchez</a>, as
+                part of his research on Source Code Curation tools for the Code forager.
+            </p>
+
+            <hr/>
+
+            <h1><strong>Reference sheet</strong></h1>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4><strong>Easy to Use</strong></h4>
+                    <p>Just <a style="font-weight:bold;" href="#">download</a> its Chrome extension called <code>Violette</code>. Install it. Done!</p>
+
+                    <h4><strong>Java only</strong></h4>
+                    <p>Search for Java code on <strong>Stackoverflow</strong> and start <strong>curating</strong>! That's all.</p>
+
+                    <h4>Browser Compatibility</h4>
+                    <p>Better compatibility is on the roadmap, but currently it works only on Chrome.</p>
+
+                </div>
+                <div class="col-md-6">
+                    <h4>Restful API</h4>
+                    <p>Supports a few code transformations, such as <code>Safe delete</code>, <code>Clip code</code>,
+                        <code>Deduplication</code>, etc.
+                    </p>
+
+                    <h4>Syntax verification</h4>
+                    <p>Detects whether the code snippet being edited has syntax errors.
+                    </p>
+
+                    <h4><strong>Free &amp; Open-Source</strong></h4>
+                    <p>Free &amp; open-source (soon). MIT license?</p>
+                </div>
+            </div>
+
+            <!--add help-->
+            <hr/>
+
+            <h1><strong>Help us make it better!</strong></h1>
+            <p>
+                You can report any experienced bugs at <a href= "https://github.com/chefedited/vesper-http">vesper-http</a>.
+            </p>
+
+        </div>
     </div>
 
     <div id="footer_wrap" class="outer">
