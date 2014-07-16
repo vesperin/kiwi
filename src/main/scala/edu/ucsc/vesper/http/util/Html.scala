@@ -242,7 +242,7 @@ object Html {
                   li("None")
                 else
                   topFiveRelatedCode.map(c => li(style:="font-size: 1.6rem;",
-                    a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
+                    a(style:="color: black;", target:="_blank", href:= ("""http://www.vesperin.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
                       String.format("%-32s %s", c.name, printStars(c.confidence)) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
                     )
                    )
