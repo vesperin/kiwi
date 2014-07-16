@@ -212,7 +212,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
         var result: Option[Result]  = None
         commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
           case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
         }
 
@@ -258,7 +258,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
         var result: Option[Result]  = None
         commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+          case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
           case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
         }
 
@@ -304,7 +304,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
       var result: Option[Result]  = None
       commit != null && commit.isValidCommit match {
-        case true =>  result = Some(Result(draft = Some(asDraft(commit))))
+        case true =>  result = Some(Result(draft   = Some(asDraft(commit))))
         case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
 
@@ -334,7 +334,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
       var result: Option[Result]  = None
       commit != null && commit.isValidCommit match {
-        case true =>  result = Some(Result(draft = Some(asFormattedDraft(commit))))
+        case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
         case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
 
@@ -457,7 +457,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
       for(c <- commits){
         c != null && c.isValidCommit match {
-          case true   =>  result = Some(Result(draft = Some(asDraft(c))))
+          case true   =>  result = Some(Result(draft   = Some(asDraft(c))))
           case false  =>  result = Some(Result(failure = Some(Failure("invalid commit"))))
         }
       }
