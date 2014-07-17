@@ -75,6 +75,12 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
+  val index = path("") {
+    get {
+      getFromResource("html/index.html")
+    }
+  }
+
   val render =
     path("render") {
       get {
@@ -91,8 +97,11 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
       }
     }
 
-  val vesperRoutes =
+  val api =
     pathPrefix("kiwi") {
       describe ~ eval ~ find ~ render
     }
+
+  val vesperRoutes =
+    index ~ api
 }

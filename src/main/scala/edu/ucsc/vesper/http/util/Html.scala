@@ -130,26 +130,8 @@ object Html {
     val codeId: String    = theCode.id.getOrElse("vesperized")
     val birthdate: String = DateTime(theCode.birthday.getOrElse(System.currentTimeMillis)).toRfc1123DateTimeString
 
-    val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork else randomSelect(5, relatedWork)
+    val topFiveRelatedCode: List[Code] = if(relatedWork.size < 6) relatedWork.filter(x => x.id.getOrElse("vesperized") != codeId) else randomSelect(5, relatedWork).filter(x => x.id.getOrElse("vesperized") != codeId)
 
-
-    val likeButtonSettings: String =
-      """<span class="likebtn-wrapper" """ +
-        "data-identifier=\"" + codeId + "\"" +
-        """  data-show_dislike_label="true"
-          |  data-counter_show="false"
-          |  data-popup_enabled="false"
-          |  data-popup_position="bottom"
-          |  data-i18n_like="Yes" data-i18n_dislike="No"
-          |  data-i18n_after_like="Yes" data-i18n_after_dislike="No"
-          |  data-i18n_like_tooltip="Found it useful"
-          |  data-i18n_dislike_tooltip="Found it useless"
-          |  data-i18n_unlike_tooltip="Found it useful"
-          |  data-i18n_undislike_tooltip="Found it useless"></span>
-          | <script type="text/javascript" src="//w.likebtn.com/js/w/widget.js" async="async"></script>
-        """.stripMargin
-
-    val likeDislikeButtons: String = likeButtonSettings
 
     val codesnippet = html(
       style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;",
@@ -174,12 +156,50 @@ object Html {
             |	background: rgb(90%,90%,90%);
             |}
             |
-            |.main_like{margin-bottom:10px; text-align:left;}
-            |
             |.container {
             |	max-width: 92rem;
             |	min-width: 92rem;
             |	margin:auto;
+            |}
+            |
+            |.btn-inverse {
+            |    color: #ffffff;
+            |    background-color: #34495e;
+            |}
+            |.btn-inverse:hover,
+            |.btn-inverse:focus,
+            |.btn-inverse:active,
+            |.btn-inverse.active,
+            |.open .dropdown-toggle.btn-inverse {
+            |    color: #ffffff;
+            |    background-color: #415b76;
+            |    border-color: #415b76;
+            |}
+            |.btn-inverse:active,
+            |.btn-inverse.active,
+            |.open .dropdown-toggle.btn-inverse {
+            |    background: #2c3e50;
+            |    border-color: #2c3e50;
+            |}
+            |.btn-inverse.disabled,
+            |.btn-inverse[disabled],
+            |fieldset[disabled] .btn-inverse,
+            |.btn-inverse.disabled:hover,
+            |.btn-inverse[disabled]:hover,
+            |fieldset[disabled] .btn-inverse:hover,
+            |.btn-inverse.disabled:focus,
+            |.btn-inverse[disabled]:focus,
+            |fieldset[disabled] .btn-inverse:focus,
+            |.btn-inverse.disabled:active,
+            |.btn-inverse[disabled]:active,
+            |fieldset[disabled] .btn-inverse:active,
+            |.btn-inverse.disabled.active,
+            |.btn-inverse[disabled].active,
+            |fieldset[disabled] .btn-inverse.active {
+            |    /*background-color: #34495e;*/
+            |    /*border-color: #34495e;*/
+            |    background-color: #d6dbdf;
+            |    border-color:#d6dbdf;
             |}
             |
           """.stripMargin)
@@ -210,43 +230,45 @@ object Html {
               blockquotes.map { x => blockquote(style:= "font-size: 1.6rem;")(x)}
             )
           ), // end of comments
-          if(survey) {
-            div(
-              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
-              p("Help us improve ", strong("vesper"), " by answering this question:"),
-              h4("Did you find this code snippet useful?"),
-              p(`class`:= "main_like")(raw(likeDislikeButtons))
-            )
-          } else {
-            p()
-          }
-          ,
 
           div(
             h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;")("Related work ", "(", strong(topFiveRelatedCode.size), ")"),
             div(
-              p("The number of ★ implies how confident the curator is on whether this code snippet can be reused. For example, 1 ★ means ",
+              p(style:="font-size: 1.6rem;", "The number of ★ implies how confident the curator is on whether this code snippet can be reused. For example, 1 ★ means ",
                 span(style:="font-style:italic", "no confident;"), " 5 ★ means ",
                 span(style:="font-style:italic", "highly confident"), "."),
               ol(
                 if(topFiveRelatedCode.isEmpty)
                   li("None")
                 else
-                  topFiveRelatedCode.map(c => li(
-                    a(style:="color: black;", target:="_blank", href:= ("""http://www.cookandstuff.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
+                  topFiveRelatedCode.map(c => li(style:="font-size: 1.6rem;",
+                    a(style:="color: black;", target:="_blank", href:= ("""http://www.vesperin.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
                       String.format("%-32s %s", c.name, printStars(c.confidence)) + " ", span(style:="font-size:12px; font-style:italic; color: #999;", birthdate)
                     )
                    )
                   )
               )
             )
-          ), // end of comments
+          ), // end of related work
+
+          if(survey) {
+            div(
+              h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
+              p(style:="font-size: 1.6rem;", "Help us improve ", strong("vesper"), " by taking the following survey:"),
+              p(raw("""<a class="typeform-share btn btn-sm btn-inverse" href="http://goo.gl/mYvhbW" data-mode="1" target="_blank">Launch me!</a>"""))
+            )
+          } else {
+            p()
+          }
+          ,
+
+          // survey
 
           hr(),
           // footer
           div(id:="footer_wrap", `class`:= "outer")(
             footer(`class`:= "inner")(
-              p(id:= "project_copyright", `class`:= "copyright")(
+              p(style:="font-size: 1.6rem;", id:= "project_copyright", `class`:= "copyright")(
                 "HTML was generated by ",
                 strong()("Vesper"),
                 ", a tool maintained by ",
@@ -260,7 +282,9 @@ object Html {
               p(
                 a(href:="https://github.com/igrigorik/ga-beacon")(
                   img(
-                    src:= "https://ga-beacon.appspot.com/UA-52736669-3/kiwi/render/" + codeId + "?pixel&dt=" + theCode.name.stripSuffix(".java").toLowerCase,
+                    // Production server: UA-52905425-1
+                    // Staging server: UA-52736669-3
+                    src:= "https://ga-beacon.appspot.com/UA-52905425-1/kiwi/render/" + codeId + "?pixel&dt=" + theCode.name.stripSuffix(".java").toLowerCase,
                     alt:= "Analytics", style:= "max-width:100%;"
                   )
                 )
@@ -310,6 +334,28 @@ object Html {
             |  });
             |
             |   }(window.jQuery))
+            |
+            |
+            |
+            |  (function () {
+            |    var qs, js, q, s, d = document, gi = d.getElementById, ce = d.createElement, gt = d.getElementsByTagName, id = 'typef_orm', b = 'https://s3-eu-west-1.amazonaws.com/share.typeform.com/';
+            |    if (!gi.call(d, id)) {
+            |        js = ce.call(d, 'script');
+            |        js.id = id;
+            |        js.src = b + 'share.js';
+            |        q = gt.call(d, 'script')[0];
+            |        q.parentNode.insertBefore(js, q)
+            |    }
+            |    id = id + '_';
+            |    if (!gi.call(d, id)) {
+            |        qs = ce.call(d, 'link');
+            |        qs.rel = 'stylesheet';
+            |        qs.id = id;
+            |        qs.href = b + 'share-button.css';
+            |        s = gt.call(d, 'head')[0];
+            |        s.appendChild(qs, s)
+            |    }
+            |  })()
             |
             |
           """.stripMargin)

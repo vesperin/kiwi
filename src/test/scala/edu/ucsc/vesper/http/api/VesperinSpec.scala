@@ -46,7 +46,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
 
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n\tvoid inject(Object object) {\n\t}\n}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
       }
     }
 
@@ -55,7 +55,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(rename = Some(Rename("member", where =  List(6, 15), to = "Preconditions", source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n\tvoid inject(Object object) {\n\t}\n}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
       }
     }
 
@@ -66,7 +66,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
 
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n\tvoid inject(Object object) {\n\t}\n}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
 
       }
     }
@@ -189,7 +189,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(clip = Some(Clip(source = Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}"), where =  List(31, 496))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}\n")
       }
     }
 
