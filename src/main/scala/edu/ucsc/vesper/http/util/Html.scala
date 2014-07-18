@@ -46,7 +46,7 @@ object Html {
     scala.xml.Unparsed(help.toString())
   }
 
-  def renderHelp() = {
+  def renderStatusPage() = {
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
       head(
         meta(charset := "utf-8"),
@@ -56,12 +56,8 @@ object Html {
       ),
       body( style:= "padding: 0 2rem; color: rgb(20%,20%,20%); background: rgb(255, 255, 255); font-family: Courier, monospace;font-size: 1.6rem;",
         div(`class`:="banner well", style:="background: #ffffff; border: none; max-width: 66rem; min-width: 66rem; margin:auto;")(
-          h3("Hello, guest!"),
-          p("I'm ", strong("Kiwi Vesper"), ", a close companion of Vesper, a code transformation library for Java source code. Kiwi exposes Vesper's API as RESTful service."),
-          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
-          p("It was designed and developed by ", a(style:="color: black;", href:= "http://www.huascarsanchez.com")("Huascar Sanchez"), " as part of his research work on Source Code Curation."),
-          hr(style:= "border:none; display:hidden; margin: 2rem 0;clear:both;"),
-          p("You can report any experienced bugs at ", a(style:="color: black;", href:= "https://github.com/chefedited/vesper-http")("vesper-http"), "."),
+          h3(span(style:="color:#898989;", "Status:"), span(style:="font-size: 2.2rem;font-style:normal;",  " Kiwi service is up and running!")),
+          p("Need help on how to use it? If you do, then ", a(style:= "color:black;", href:= "http://www.vesperin.com/kiwi/help")("Click here.")),
           div(id:="footer_wrap", `class`:= "outer")(
             footer(`class`:= "inner")(
               p(id:= "project_copyright", `class`:= "copyright")(

@@ -33,9 +33,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
   val describe =
     path("help") {
       get {
-        complete {
-          interpreter.renderHelpPage()
-        }
+        getFromResource("html/index.html")
       }
     }
 
@@ -77,7 +75,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val index = path("") {
     get {
-      getFromResource("html/index.html")
+      complete(interpreter.renderStatusPage())
     }
   }
 

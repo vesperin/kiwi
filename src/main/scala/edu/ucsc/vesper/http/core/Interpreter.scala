@@ -691,8 +691,8 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     Html.ohSnap()
   }
 
-  def renderHelpPage() =  {
-     Html.renderHelp()
+  def renderStatusPage() =  {
+     Html.renderStatusPage()
   }
 
 }
