@@ -205,7 +205,7 @@ object Html {
         // main
         div(`class`:="container", style:="background: #ffffff; border: none")(
           h3(strong(theCode.name)),
-          p(style:="margin-top:-1rem;", small("From ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl))),
+          p(style:="margin-top:-1rem;", small(style:="font-size: 1.2rem;", "From ", a(style:="color: black;", href:= theCode.url.getOrElse(hrefUrl))(txtUrl))),
           p(style:="font-size: 1.6rem;", raw(linkified)),
           // code
           div(
@@ -235,7 +235,7 @@ object Html {
                 span(style:="font-style:italic", "highly confident"), "."),
               ol(
                 if(topFiveRelatedCode.isEmpty)
-                  li("None")
+                  li(style:="font-size: 1.6rem;", "None")
                 else
                   topFiveRelatedCode.map(c => li(style:="font-size: 1.6rem;",
                     a(style:="color: black;", target:="_blank", href:= ("""http://www.vesperin.com/kiwi/render?q=id:""" + c.id.getOrElse(codeId)))(
