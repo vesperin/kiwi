@@ -251,7 +251,7 @@ object Html {
             div(
               h4(style:="border-bottom: 1px solid #e5e5e5;margin-top: 22px;", "Survey"),
               p(style:="font-size: 1.6rem;", "Help us improve ", strong("vesper"), " by taking the following survey:"),
-              p(raw("""<a class="typeform-share btn btn-sm btn-inverse" href="http://goo.gl/mYvhbW" data-mode="1" target="_blank">Launch me!</a>"""))
+              p(raw("""<a class="typeform-share btn btn-sm btn-inverse" href="http://goo.gl/vzqmzG" data-mode="1" target="_blank">Launch me!</a>"""))
             )
           } else {
             p()
