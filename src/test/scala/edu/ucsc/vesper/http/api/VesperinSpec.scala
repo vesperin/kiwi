@@ -153,6 +153,13 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
+    "return a deduplicate request in JSON form for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate":{"source":{"name":"ScratchedCodeSnippet.java","description":"Java: *scratched* code snippet","content":"import java.util.*;\nimport java.lang.*;\n\nclass ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}\n","elapsedtime":"","tags":[],"datastructures":[],"algorithms":[],"refactorings":[],"confidence":0,"comments":[],"url":"http://stackoverflow.com/questions/12339939/bubble-sort-in-java","birthday":1406125099529}}}""" )) ~>
+        sealRoute(vesperRoutes) ~> check {
+        responseAs[Result].info.get mustEqual Info(List("everything looks clear!"))
+      }
+    }
+
     "return a cleanup request for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
         sealRoute(vesperRoutes) ~> check {

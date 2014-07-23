@@ -78,8 +78,8 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   }
 
   private[core] def collectIssues(refactorer: Refactorer, source: Source): Future[mutable.Set[Issue]] = Future {
-    val introspector: Introspector = refactorer.getIntrospector(source)
-    asScalaSet(introspector.detectIssues())
+    val introspector: Introspector = refactorer.getIntrospector()
+    asScalaSet(introspector.detectIssues(source))
   }
 
 
@@ -462,7 +462,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
 
     def produceResult(commits: mutable.Buffer[Commit]): Future[Option[Result]] = Future {
-      var result: Option[Result]  = None
+      var result: Option[Result]  = Some(Result(info  = Some(Info(List("everything looks clear!")))))
 
       for(c <- commits){
         c != null && c.isValidCommit match {
