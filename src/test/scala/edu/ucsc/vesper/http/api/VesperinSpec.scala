@@ -15,12 +15,12 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   def actorRefFactory = system
 
   // reason of this addition? see https://groups.google.com/forum/#!msg/spray-user/o8DtI6VUMbA/n9tguTb_1noJ
-  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(2, SECONDS))
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
   "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/kiwi/help") ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Hello")
+        responseAs[String] must contain("Source Code Curation tools for the Code forager")
       }
     }
 
@@ -155,14 +155,6 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
     "return a cleanup request for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
-        sealRoute(vesperRoutes) ~> check {
-        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}\n")
-      }
-    }
-
-    "return a cleanup request in JSON form for POST requests to the root path" in {
-      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
         responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}\n")

@@ -354,6 +354,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     reformatted
   }
 
+  // todo(Huascar) fix
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
     def detectIssues(source: Source): mutable.Set[Issue] = {
       val introspector: Introspector = refactorer.getIntrospector(source)
