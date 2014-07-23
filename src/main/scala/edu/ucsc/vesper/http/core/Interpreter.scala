@@ -304,8 +304,16 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
       var result: Option[Result]  = None
       commit != null && commit.isValidCommit match {
-        case true =>  result = Some(Result(draft   = Some(asDraft(commit))))
-        case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+        case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
+        case false =>
+          val message: String =  change.getErrors.mkString(" ")
+
+          // HACK
+          // todo(Huascar) remove once clean is fixed
+          result = message == "there is nothing to optimize" match {
+            case true  => Some(Result(warnings = Some(List(Warning(message)))))
+            case false => Some(Result(failure  = Some(Failure(message))))
+          }
       }
 
       result
