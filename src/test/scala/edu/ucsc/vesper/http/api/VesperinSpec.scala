@@ -20,7 +20,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
   "Vesperin" should {
     "return a greeting for GET requests to the 'all' path" in {
       Get("/kiwi/help") ~> vesperRoutes ~> check {
-        responseAs[String] must contain("Source Code Curation tools for the Code forager")
+        responseAs[String] must contain("Code Transformation Functionality")
       }
     }
 

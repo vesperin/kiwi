@@ -305,15 +305,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       var result: Option[Result]  = None
       commit != null && commit.isValidCommit match {
         case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
-        case false =>
-          val message: String =  change.getErrors.mkString(" ")
-
-          // HACK
-          // todo(Huascar) remove once clean is fixed
-          result = message == "there is nothing to optimize" match {
-            case true  => Some(Result(warnings = Some(List(Warning(message)))))
-            case false => Some(Result(failure  = Some(Failure(message))))
-          }
+        case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
       }
 
       result
