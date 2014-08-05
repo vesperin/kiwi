@@ -78,8 +78,13 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   }
 
   private[core] def collectIssues(refactorer: Refactorer, source: Source): Future[mutable.Set[Issue]] = Future {
-    val introspector: Introspector = refactorer.getIntrospector()
-    asScalaSet(introspector.detectIssues(source))
+    try {
+      val introspector: Introspector = refactorer.getIntrospector
+      asScalaSet(introspector.detectIssues(source))
+    } catch {
+      case e:RuntimeException =>
+        mutable.Set.empty[Issue]
+    }
   }
 
 
