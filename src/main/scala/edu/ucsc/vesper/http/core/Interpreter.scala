@@ -539,7 +539,14 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
     def buildStatus(code: Code, desc: String, tinyUrl: String): Future[String] = {
       Future {
-        val massagedDescription: String   = desc.stripPrefix("Java:").stripSuffix(".").trim + " " + tinyUrl + " "
+        val ELLIPSES_TEXT: String         = "..."
+        val description: String           = desc.stripPrefix("Java:").stripSuffix(".").trim
+        val shortDescription: String      = if (description.length + tinyUrl.length + 2/*spaces*/ >= 100)
+          description.substring(0, 50) + ELLIPSES_TEXT
+        else description
+
+        val massagedDescription: String   = shortDescription + " " + tinyUrl + " "
+
         val algorithms      = code.algorithms
         val datastructures  = code.datastructures
         val tags            = code.tags
