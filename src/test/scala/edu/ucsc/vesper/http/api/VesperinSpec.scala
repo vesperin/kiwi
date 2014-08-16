@@ -39,6 +39,13 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       }
     }
 
+    "return an inspect request containing a list of imports for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", Command(inspect = Some(Inspect(source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(List<Object> object){}}"), imports = true)))) ~>
+        sealRoute(vesperRoutes) ~> check {
+
+        responseAs[Result] mustEqual Result(info = Some(Info(List("java.util.List"))))
+      }
+    }
 
     "return a rename class request for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", Command(rename = Some(Rename("class", where =  List(6, 15), to = "Preconditions", source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>

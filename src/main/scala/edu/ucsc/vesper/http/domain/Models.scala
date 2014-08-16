@@ -80,7 +80,7 @@ object Models {
   case class Draft(cause: String, description: String, timestamp: Long, before: Code, after: Code)
 
   // e.g., """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
-  case class Inspect(source: Code)
+  case class Inspect(source: Code, imports:Boolean = false)
   // """{ "what": "class", "where": ["123", "132"], "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
   case class Remove(what: String, where: List[Int], source: Code)
   //"""{"rename" : { "what": "class", "where": [1, 2], "to":"ResourceInjector", "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }}"""
@@ -163,7 +163,7 @@ object Models {
   }
 
   object Inspect extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val inspectFormats = jsonFormat1(Inspect.apply)
+    implicit val inspectFormats = jsonFormat2(Inspect.apply)
   }
 
   object Remove extends DefaultJsonProtocol with SprayJsonSupport {

@@ -109,6 +109,10 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
       def collectWarnings(problems: Seq[String]): Future[Seq[Warning]] = Future(problems.map(x => Warning(x)))
 
+      def collectImports(introspector: Introspector, source: Source): Future[Seq[String]] = Future {
+        asScalaSet(introspector.detectMissingImports(source)).toSeq
+      }
+
       def verifySource(warnings: Seq[Warning]): Future [Option[Result]] = {
         try {
 
@@ -127,12 +131,25 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
         }
       }
 
+      def fetchImports(imports: Seq[String]): Future [Option[Result]] = {
+        Future {
+
+          val result: Option[Result] = imports.isEmpty match {
+            case false  =>  Some(Result(info = Some(Info(imports.toList))))
+            case true   =>  Some(Result(info = Some(Info(List()))))
+          }
+
+          result
+        }
+      }
+
       val inspected = for {
         vesperSource          <- collectSource(inspect.source)
         vesperIntrospector    <- createIntrospector(refactorer)
         caughtProblems        <- verifySourceWithIntrospector(vesperSource, vesperIntrospector)
         warnings              <- collectWarnings(caughtProblems)
-        result                <- verifySource(warnings)
+        imports               <- collectImports(vesperIntrospector, vesperSource)
+        result                <- if(!inspect.imports) verifySource(warnings) else fetchImports(imports)
       } yield {
         result
       }
