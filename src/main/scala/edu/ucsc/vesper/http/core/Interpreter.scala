@@ -2,7 +2,6 @@ package edu.ucsc.vesper.http.core
 
 import edu.ucsc.refactor._
 import edu.ucsc.refactor.spi._
-import edu.ucsc.refactor.util.Commit
 import edu.ucsc.vesper.http.config.Configuration
 import edu.ucsc.vesper.http.domain.Models._
 import edu.ucsc.vesper.http.util.{GoogleUrlShortener, Html}
@@ -11,7 +10,7 @@ import twitter4j.{Status, Twitter, TwitterFactory}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContextExecutor, ExecutionContext, Future}
 import scala.xml.Unparsed
 
 /**
@@ -19,7 +18,7 @@ import scala.xml.Unparsed
  */
 trait Interpreter extends Configuration with VesperConversions with Flattener {
 
-  implicit def executionContext = ExecutionContext.Implicits.global
+  implicit def executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
   val parser: Parser    = CommandParser()
   val storage: Storage  = VesperStorage()
@@ -77,9 +76,8 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     asSource(code)
   }
 
-  private[core] def collectIssues(refactorer: Refactorer, source: Source): Future[mutable.Set[Issue]] = Future {
+  private[core] def collectIssues(introspector: Introspector, source: Source): Future[mutable.Set[Issue]] = Future {
     try {
-      val introspector: Introspector = refactorer.getIntrospector
       asScalaSet(introspector.detectIssues(source))
     } catch {
       case e:RuntimeException =>
@@ -96,15 +94,15 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     refactorer.apply(change)
   }
 
+  def createIntrospector(): Future[Introspector] = Future(
+    Vesper.createIntrospector()
+  )
+
   private def evalInspect(refactorer: Refactorer, inspect: Inspect): Future[Option[Result]] = {
     try {
 
-      def createIntrospector(refactorer: Refactorer): Future[Introspector] = Future(
-        refactorer.getIntrospector
-      )
-
       def verifySourceWithIntrospector(source: Source, introspector: Introspector): Future[Seq[String]] = Future(
-        asScalaBuffer(introspector.verifySource(source))
+        asScalaBuffer(introspector.detectSyntaxErrors(source))
       )
 
       def collectWarnings(problems: Seq[String]): Future[Seq[Warning]] = Future(problems.map(x => Warning(x)))
@@ -145,7 +143,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
       val inspected = for {
         vesperSource          <- collectSource(inspect.source)
-        vesperIntrospector    <- createIntrospector(refactorer)
+        vesperIntrospector    <- createIntrospector()
         caughtProblems        <- verifySourceWithIntrospector(vesperSource, vesperIntrospector)
         warnings              <- collectWarnings(caughtProblems)
         imports               <- collectImports(vesperIntrospector, vesperSource)
@@ -216,9 +214,9 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   }
 
 
-  private def evalClip(refactorer: Refactorer, clip: Clip): Future[Option[Result]] = {
-    val where:List[Int]       = clip.where
-    val vesperSource: Source  = asSource(clip.source)
+  private def evalTrim(refactorer: Refactorer, trim: Trim): Future[Option[Result]] = {
+    val where:List[Int]       = trim.where
+    val vesperSource: Source  = asSource(trim.source)
 
     clipSelection(refactorer, where, vesperSource)
   }
@@ -376,79 +374,87 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     reformatted
   }
 
-  // todo(Huascar) fix
+
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
-    def detectIssues(source: Source): mutable.Set[Issue] = {
-      val introspector: Introspector = refactorer.getIntrospector(source)
-      val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues())
-      result
+
+    def detectIssues(source: Source): Future[mutable.Set[Issue]] = Future {
+      val introspector: Introspector = Vesper.createIntrospector()
+      val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues(source))
+
+      val issues: mutable.Set[Issue] = result.filter(
+        i => Names.hasAvailableResponse(i.getName.asInstanceOf[Smell])
+          && Names.from(i.getName.asInstanceOf[Smell]).isSame(Refactoring.DEDUPLICATE))
+
+
+      issues
     }
 
+
     def createCommit(issue: Issue): Commit = {
-      val change: Change = refactorer.createChange(ChangeRequest.forIssue(issue))
-      val commit: Commit = refactorer.apply(change)
+      val refactor: Refactorer = Vesper.createRefactorer()
+      val change: Change = refactor.createChange(ChangeRequest.forIssue(issue))
+      val commit: Commit = refactor.apply(change)
 
       commit
     }
 
-    def batchChanges(source: Source): Future [mutable.Stack[Commit]] = Future {
-      val Q: mutable.Queue[Source] = new mutable.Queue[Source]
-      val S: mutable.Stack[Commit] = new mutable.Stack[Commit]
-
-      Q += source
-
-      while(Q.nonEmpty){
-        val src: Source = Q.dequeue()
-
-        val issues: mutable.Set[Issue] = detectIssues(src).filter(
-          i => Names.hasAvailableResponse(i.getName)
-            && (Names.from(i.getName).isSame(Refactoring.DEDUPLICATE)
-            || Names.from(i.getName).isSame(Refactoring.DELETE_UNUSED_IMPORTS)))
-
-        for(i <- issues){
-          val c: Commit = createCommit(i)
-          if(c != null && c.isValidCommit && Q.isEmpty) {
-            S.push(c)
-            Q.enqueue(c.getSourceAfterChange)
-          }
-        }
+    def optimize(refactorer: Refactorer, code: Source): Future[Source] = Future {
+      val request: ChangeRequest = ChangeRequest.optimizeImports(code)
+      val change: Change = refactorer.createChange(request)
+      val commit: Commit = refactorer.apply(change)
+      if(commit != null && commit.isValidCommit){
+        commit.getSourceAfterChange
+      } else {
+        commit.getSourceBeforeChange
       }
-
-      S
     }
 
-    def produceResult(vesperSource: Source, stack:mutable.Stack[Commit]): Future[Option[Result]] = Future {
-      if(stack.isEmpty)
-        Some(
-          Result(
-            draft = Some(
-              asFormatterDraft(
-                vesperSource,
-                "Full cleanup",
-                "Reformatted code and also removed code redundancies"
-              )
-            )
-          ))
-      else {
-        Some(
-          Result(
-            draft = Some(
-              asFormattedDraft(
-                stack.pop(),
-                cause       = "Full cleanup",
-                description = "Reformatted code and also removed code redundancies"
-              )
+
+    def reformat(refactorer: Refactorer, code: Source): Future[Source] = Future {
+      val request: ChangeRequest = ChangeRequest.reformatSource(code)
+      val change: Change = refactorer.createChange(request)
+      val commit: Commit = refactorer.apply(change)
+      if(commit != null && commit.isValidCommit){
+        commit.getSourceAfterChange
+      } else {
+        commit.getSourceBeforeChange
+      }
+    }
+
+    def deduplicate(refactorer: Refactorer, before: Source, issues: mutable.Set[Issue]): Future[Source] = Future {
+      // http://stackoverflow.com/questions/24571444/get-element-from-set
+
+      val commit: Commit = if (issues.isEmpty) null else createCommit(issues.toSeq(0))
+      if(commit != null && commit.isValidCommit) {
+         commit.getSourceAfterChange
+      } else {
+         before
+      }
+    }
+
+
+    def produceResult(before: Source, after: Source): Future[Option[Result]] = Future {
+      Some(
+        Result(
+          draft = Some(
+            asFormatterDraft(
+              before,
+              after,
+              "Full cleanup",
+              "Reformatted code and also removed code redundancies"
             )
           )
-        )
-
-      }
+        ))
     }
 
+
     val cleanedUp = for {
-      source  <- collectSource(cleanup.source)
-      commits <- batchChanges(source)
-      result  <- produceResult(source, commits)
+      source       <- collectSource(cleanup.source)
+      formatted    <- reformat(refactorer, source)
+      optimized    <- optimize(refactorer, formatted)
+      issues       <- detectIssues(optimized)
+      deduplicated <- deduplicate(refactorer, optimized, issues)
+      result       <- produceResult(formatted, deduplicated)
     } yield {
       result
     }
@@ -459,7 +465,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Future[Option[Result]] = {
 
     def filterNonDeduplicateIssues(issues:mutable.Set[Issue]): Future[mutable.Set[Issue]] = Future {
-       issues.filter(i => Names.hasAvailableResponse(i.getName) && Names.from(i.getName).isSame(Refactoring.DEDUPLICATE))
+       issues.filter(i => Names.hasAvailableResponse(i.getName.asInstanceOf[Smell]) && Names.from(i.getName.asInstanceOf[Smell]).isSame(Refactoring.DEDUPLICATE))
     }
 
 
@@ -490,7 +496,8 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
     val deduplicated = for {
       source   <- collectSource(deduplicate.source)
-      issues   <- collectIssues(refactorer, source)
+      intros   <- createIntrospector()
+      issues   <- collectIssues(intros, source)
       fIssues  <- filterNonDeduplicateIssues(issues)
       changes  <- applyChanges(fIssues)
       result   <- produceResult(changes)
@@ -712,7 +719,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
-      case clip: Clip               => evalClip(environment, clip)
+      case trim: Trim               => evalTrim(environment, trim)
       case _                        => unknownCommand()
     }
   }

@@ -43,7 +43,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(inspect = Some(Inspect(source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(List<Object> object){}}"), imports = true)))) ~>
         sealRoute(vesperRoutes) ~> check {
 
-        responseAs[Result] mustEqual Result(info = Some(Info(List("java.util.List"))))
+        responseAs[Result] mustEqual Result(info = Some(Info(List("java.util.List;"))))
       }
     }
 
@@ -53,7 +53,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
 
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -62,7 +62,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(rename = Some(Rename("member", where =  List(6, 15), to = "Preconditions", source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -73,7 +73,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
         sealRoute(vesperRoutes) ~> check {
 
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Preconditions.java", description = "Resource Injector", content = "class Preconditions {\n  void inject(Object object) {}\n}")
 
       }
     }
@@ -116,7 +116,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"optimize": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -124,7 +124,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(optimize = Some(Optimize(source = Code(name = "Bootstrap.java", description = "Resource Injector", content = "import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "import java.util.List;\t\n\tclass Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -132,7 +132,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", Command(format = Some(Format(Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -140,7 +140,7 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
       Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"format": { "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {void inject(Object object){}}")
-        responseAs[Result].draft.get.after  mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}\n")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Bootstrap.java", description = "Resource Injector", content = "class Bootstrap {\n  void inject(Object object) {}\n}")
       }
     }
 
@@ -170,16 +170,16 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
     "return a cleanup request for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
         sealRoute(vesperRoutes) ~> check {
-        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}\n")
+        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void baam() {\n    System.out.println(1);\n  }\n\n  void beem() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    baam();\n  }\n}")
+        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}")
       }
     }
 
     "return a cleanup request in JSON form for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]} }}""" )) ~>
         sealRoute(vesperRoutes) ~> check {
-        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}\n")
+        responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void baam() {\n    System.out.println(1);\n  }\n\n  void beem() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    baam();\n  }\n}")
+        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}")
       }
     }
 
@@ -200,19 +200,28 @@ class VesperinSpec extends Specification with Specs2RouteTest with Vesperin {
 
 
     "return a clip method request (no dependencies) for POST requests to the root path" in {
-      Post("/kiwi/eval?auth_token=legolas", Command(clip = Some(Clip(source = Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}"), where =  List(31, 496))))) ~>
+      Post("/kiwi/eval?auth_token=legolas", Command(trim = Some(Trim(source = Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}"), where =  List(31, 496))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}\n")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "ScratchedCodeSnippet.java", description = "Bubble sort implementation", content = "class ScratchedCodeSnippet {\n  public static void main(String[] args) {\n    int[] arr = {12, 23, 43, 34, 3, 6, 7, 1, 9, 6};\n    {\n      int temp;\n      for (int i = 0; i < arr.length; i++) {\n        for (int j = 0; j < arr.length - i; j++) {\n          if (arr[j] > arr[j + 1]) {\n            temp = arr[j];\n            arr[j + 1] = arr[j];\n            arr[j + 1] = temp;\n          }\n        }\n      }\n    }\n    for (int i = 0; i < arr.length; i++) {\n      System.out.print(arr[i] + \" \");\n    }\n  }\n}")
       }
     }
 
 
     "return a clip method (with dependencies) request for POST requests to the root path" in {
-      Post("/kiwi/eval?auth_token=legolas", Command(clip = Some(Clip(source = Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString msg = \"Hi!\";\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}\n\t/** {@link Name#boom(String)}**/String baam(String msg){  return msg; }\nString beem(String text){ return boom(text); }}"), where =  List(88, 165))))) ~>
+      Post("/kiwi/eval?auth_token=legolas", Command(trim = Some(Trim(source = Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString msg = \"Hi!\";\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}\n\t/** {@link Name#boom(String)}**/String baam(String msg){  return msg; }\nString beem(String text){ return boom(text); }}"), where =  List(88, 165))))) ~>
         sealRoute(vesperRoutes) ~> check {
         responseAs[Result].draft.get.before mustEqual  Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString msg = \"Hi!\";\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}\n\t/** {@link Name#boom(String)}**/String baam(String msg){  return msg; }\nString beem(String text){ return boom(text); }}")
-        responseAs[Result].draft.get.after  mustEqual  Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List; \nimport java.util.Collection; \nclass Name {\nString;\n\tString boom(String msg){ if(null != msg) { return boom(null);} return \"Hi!\";}}")
+        responseAs[Result].draft.get.after  mustEqual  Code(name = "Name.java", description = "Name class implementation", content = "import java.util.List;\nimport java.util.Collection;\n\nclass Name {\n  String boom(String msg) {\n    if (null != msg) {\n      return boom(null);\n    }\n    return \"Hi!\";\n  }\n}")
+      }
+    }
+
+    "return a cleanup request 1 for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "ToSort.java", description = "Name class", content = "import java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\nimport java.util.*;\n\npublic class ToSort implements Comparable {\n\n    private Float val;\n    private String id;\n\n    public ToSort(Float val, String id) {\n      this.val = val;\n      this.id = id;\n    }\n\n    @Override\n    public int compareTo(Object o) {\n\n      ToSort f = (ToSort) o;\n\n      if (val.floatValue() > f.val.floatValue()) {\n        return 1;\n      } else if (val.floatValue() < f.val.floatValue()) {\n        return -1;\n      } else {\n        return 0;\n      }\n\n    }\n\n    @Override\n    public String toString() {\n      return this.id;\n    }\n  }"))))) ~>
+        sealRoute(vesperRoutes) ~> check {
+
+        responseAs[Result].draft.get.before === Code(name = "ToSort.java", description = "Name class", content = "import java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\nimport java.util.*;\n\npublic class ToSort implements Comparable {\n\n  private Float val;\n  private String id;\n\n  public ToSort(Float val, String id) {\n    this.val = val;\n    this.id = id;\n  }\n\n  @Override\n  public int compareTo(Object o) {\n\n    ToSort f = (ToSort) o;\n\n    if (val.floatValue() > f.val.floatValue()) {\n      return 1;\n    } else if (val.floatValue() < f.val.floatValue()) {\n      return -1;\n    } else {\n      return 0;\n    }\n\n  }\n\n  @Override\n  public String toString() {\n    return this.id;\n  }\n}")
+        responseAs[Result].draft.get.after  === Code(name = "ToSort.java", description = "Name class", content = "import java.util.*;\n\npublic class ToSort implements Comparable {\n\n  private Float val;\n  private String id;\n\n  public ToSort(Float val, String id) {\n    this.val = val;\n    this.id = id;\n  }\n\n  @Override\n  public int compareTo(Object o) {\n\n    ToSort f = (ToSort) o;\n\n    if (val.floatValue() > f.val.floatValue()) {\n      return 1;\n    } else if (val.floatValue() < f.val.floatValue()) {\n      return -1;\n    } else {\n      return 0;\n    }\n\n  }\n\n  @Override\n  public String toString() {\n    return this.id;\n  }\n}")
       }
     }
 

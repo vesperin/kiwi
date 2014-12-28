@@ -2,11 +2,10 @@ package edu.ucsc.vesper.http.core
 
 import java.util.Date
 
-import edu.ucsc.refactor.Source
 import edu.ucsc.refactor.spi.{CommitSummary, Name, Refactoring}
-import edu.ucsc.refactor.util.{Commit, Note, SourceFormatter}
+import edu.ucsc.refactor.util.{Note, SourceFormatter}
+import edu.ucsc.refactor.{Commit, Source}
 import edu.ucsc.vesper.http.domain.Models.{Code, Comment, Draft}
-import org.eclipse.jdt.core.dom.{ASTNode, MethodDeclaration, SimpleName, VariableDeclaration}
 
 import scala.collection.mutable
 
@@ -86,12 +85,16 @@ trait VesperConversions {
   def asFormatterDraft(source: Source, cause: String, description: String): Draft = {
     val formattedContent: String  = new SourceFormatter().format(source.getContents)
 
+    asFormatterDraft(source, Source.from(source, formattedContent), cause, description)
+  }
+
+  def asFormatterDraft(before: Source, after: Source, cause: String, description: String): Draft = {
     Draft(
       cause,
       description,
       System.nanoTime(),
-      asCode(source),
-      asCode(Source.from(source, formattedContent))
+      asCode(before),
+      asCode(after)
     )
   }
 
@@ -144,18 +147,6 @@ trait VesperConversions {
       after,
       summary
     )
-  }
-
-  private def getSimpleName(astNode: ASTNode): String = {
-    astNode match {
-      case method: MethodDeclaration =>
-        method.getName.getIdentifier
-      case simpleName: SimpleName =>
-        simpleName.getIdentifier
-      case declaration: VariableDeclaration =>
-        declaration.getName.getIdentifier
-      case _ => "UNKNOWN"
-    }
   }
 
   // important ! refactoring's human readable descriptions

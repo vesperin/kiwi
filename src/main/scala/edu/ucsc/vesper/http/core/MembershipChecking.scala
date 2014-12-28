@@ -6,15 +6,15 @@ import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 import spray.routing.authentication._
 import spray.routing.{AuthenticationFailedRejection, HttpService, RequestContext}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait UserLounge extends Configuration {
+trait MembershipChecking extends Configuration {
   this: HttpService =>
 
-  implicit def executionContext = actorRefFactory.dispatcher
+  implicit def executionContext: ExecutionContext = actorRefFactory.dispatcher
 
 
   def createMembership(member: Member): Option[Membership] = {
@@ -73,7 +73,7 @@ trait UserLounge extends Configuration {
     membership.role.id == 0 || membership.role.id == 1
   }
 
-  def vesperin: RequestContext => Future[Authentication[Membership]] = {
+  def withVesperin: RequestContext => Future[Authentication[Membership]] = {
     ctx: RequestContext =>
       val token = getToken(ctx)
       if(token.isEmpty){

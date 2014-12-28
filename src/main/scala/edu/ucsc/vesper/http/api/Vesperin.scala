@@ -8,7 +8,7 @@ import spray.routing.HttpService
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Vesperin extends HttpService with AsyncSupport with UserLounge {
+trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
 
   /**
    * The reason I decided to desist from adding thousands of instances of a some Interpreter actor
@@ -39,12 +39,14 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val eval =
     path("eval"){
-      authenticate(vesperin) { membership =>
+      authenticate(withVesperin) { membership =>
         (post | put) {
           authorize(isCurator(membership)){
             entity(as[Command]) {
               command =>
-                detach(){
+                // http://spray.io/documentation/1.2.2/spray-routing/execution-directives/detach/#detach
+                // This directive needs either an implicit ExecutionContext (detach()) or an explicit one (detach(ec)).
+                detach(executionContext){
                   onComplete(interpreter.eval(membership, command)){
                     case result => complete(result)
                   }
@@ -57,12 +59,12 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
 
   val find =
     path("find") {
-      authenticate(vesperin) { membership =>
+      authenticate(withVesperin) { membership =>
         get {
           authorize(isReviewer(membership)){
             parameter('q){
               q =>
-                detach(){
+                detach(executionContext){
                   onComplete(interpreter.eval(membership, q)){
                     case result => complete(result)
                   }
@@ -86,7 +88,7 @@ trait Vesperin extends HttpService with AsyncSupport with UserLounge {
           // note (Huascar): IntelliJ is detecting an error where there is none
           // this is how to use parameters in Spray.io
           (q, s) =>
-            detach(){
+            detach(executionContext){
               onComplete(interpreter.render(q, s)){
                 case result => complete(result)
               }

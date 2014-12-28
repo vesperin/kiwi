@@ -98,7 +98,7 @@ object Models {
   // """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"public class Bootstrap {void inject(Object object){}"} }"""
   case class Persist(source: Code)
   // """{"source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"}, "where": ["123", "132"]}"""
-  case class Clip(source: Code, where: List[Int])
+  case class Trim(source: Code, where: List[Int])
 
   case class Body(kind: String, id: String, longUrl: String)
   case class LongURL(longUrl: String)
@@ -136,17 +136,17 @@ object Models {
 
   // the command to request some result
   case class Command(
-        inspect: Option[Inspect]          = None,
-        remove:  Option[Remove]           = None,
-        rename:  Option[Rename]           = None,
-        optimize: Option[Optimize]        = None,
-        format: Option[Format]            = None,
-        deduplicate: Option[Deduplicate]  = None,
-        cleanup: Option[Cleanup]          = None,
-        publish: Option[Publish]          = None,
-        persist: Option[Persist]          = None,
-        find: Option[Find]                = None,
-        clip: Option[Clip]                = None
+        inspect:      Option[Inspect]     = None,
+        remove:       Option[Remove]      = None,
+        rename:       Option[Rename]      = None,
+        optimize:     Option[Optimize]    = None,
+        format:       Option[Format]      = None,
+        deduplicate:  Option[Deduplicate] = None,
+        cleanup:      Option[Cleanup]     = None,
+        publish:      Option[Publish]     = None,
+        persist:      Option[Persist]     = None,
+        find:         Option[Find]        = None,
+        trim:         Option[Trim]        = None
   )
 
 
@@ -234,8 +234,8 @@ object Models {
     implicit val persistFormats = jsonFormat1(Persist.apply)
   }
 
-  object Clip extends DefaultJsonProtocol with SprayJsonSupport {
-    implicit val clipFormats = jsonFormat2(Clip.apply)
+  object Trim extends DefaultJsonProtocol with SprayJsonSupport {
+    implicit val clipFormats = jsonFormat2(Trim.apply)
   }
 
   object Warning extends DefaultJsonProtocol with SprayJsonSupport {
