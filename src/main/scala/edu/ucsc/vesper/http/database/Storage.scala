@@ -1,17 +1,17 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.database
 
 import edu.ucsc.vesper.http.database.DatabaseSupport._
-import edu.ucsc.vesper.http.domain.Models._
+import edu.ucsc.vesper.http.domain.{Code, _}
 import reactivemongo.bson.BSONDocument
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-private[core] trait Storage {
+trait Storage {
 
-  implicit def executionContext = ExecutionContext.Implicits.global
+  implicit def executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
   def persist(code: Code): Future[Code] = Sources.add(code)
 
@@ -38,4 +38,4 @@ private[core] trait Storage {
 
 }
 
-case class VesperStorage() extends Storage
+case class MongoStorage() extends Storage

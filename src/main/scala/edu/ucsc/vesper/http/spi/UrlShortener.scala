@@ -1,19 +1,19 @@
-package edu.ucsc.vesper.http.util
+package edu.ucsc.vesper.http.spi
 
-import edu.ucsc.vesper.http.domain.Models.{Body, LongURL}
+import edu.ucsc.vesper.http.domain.{Body, LongURL}
 import org.scribe.builder.ServiceBuilder
 import org.scribe.builder.api.GoogleApi
 import org.scribe.model.{OAuthRequest, Response, Verb}
 import org.scribe.oauth.OAuthService
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-class GoogleUrlShortener {
-  implicit def executionContext = ExecutionContext.Implicits.global
+class UrlShortener {
+  implicit def executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
   // thx to http://codeoftheday.blogspot.com/2013/07/quick-and-easy-integration-of-google.html
   var oAuthService: OAuthService  = new ServiceBuilder().provider(classOf[GoogleApi])

@@ -2,19 +2,20 @@ package edu.ucsc.vesper.http
 
 import akka.actor.{ActorSystem, Props}
 import akka.io.IO
+import akka.routing.RoundRobinRouter
 import spray.can.Http
 import akka.util.Timeout
 import scala.concurrent.duration._
-import edu.ucsc.vesper.http.api.VesperinApi
+import edu.ucsc.vesper.http.api.KiwiActor
 import scala.util.Properties
 
 object Main extends App {
 
   // The ActorSystem to host our application in
-  implicit val system = ActorSystem("on-vesper-http")
+  implicit val system = ActorSystem("on-kiwi")
 
   // create and start our service actor
-  val service = system.actorOf(Props[VesperinApi], "vesper-http")
+  val service = system.actorOf(Props[KiwiActor].withRouter(RoundRobinRouter(nrOfInstances = 20)), "kiwi")
 
   val port = Properties.envOrElse("PORT", "8080").toInt // for Heroku compatibility
 

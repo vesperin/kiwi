@@ -1,7 +1,7 @@
 package edu.ucsc.vesper.http.util
 
 import edu.ucsc.refactor.util.SourceFormatter
-import edu.ucsc.vesper.http.domain.Models.Code
+import edu.ucsc.vesper.http.domain.Code
 import spray.http.DateTime
 
 import scalatags.Text.all._
@@ -16,7 +16,7 @@ object Html {
     LinkifyText.createLinks(text)
   }
 
-  def ohSnap() = {
+  def buildErrorPage() = {
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
       head(
         meta(charset := "utf-8"),
@@ -46,7 +46,7 @@ object Html {
     scala.xml.Unparsed(help.toString())
   }
 
-  def renderStatusPage() = {
+  def buildStatusPage() = {
     val help = html(style:= "font-size: 62.5%; -webkit-font-smoothing: antialiased; font-smoothing: antialiased;")(
       head(
         meta(charset := "utf-8"),
@@ -102,7 +102,7 @@ object Html {
     builder.toString()
   }
 
-  def renderCodesnippet(theCode: Code, relatedWork: List[Code], survey: Boolean) = {
+  def buildCodesnippetHtml(theCode: Code, relatedWork: List[Code], survey: Boolean) = {
     val hrefUrl: String   = theCode.url.getOrElse("#")
     var txtUrl:String     = theCode.url.getOrElse("(Missing URL)")
     txtUrl = txtUrl.stripPrefix("http://")

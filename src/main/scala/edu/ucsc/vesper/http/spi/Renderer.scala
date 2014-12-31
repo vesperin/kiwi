@@ -1,24 +1,27 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.spi
 
-import edu.ucsc.vesper.http.domain.Models.{ExactlyOne, Code, Result}
+import edu.ucsc.vesper.http.database.{MongoStorage, Storage}
+import edu.ucsc.vesper.http.domain.{ExactlyOne, Code, Result}
 import edu.ucsc.vesper.http.util.Html
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContextExecutor, Future, ExecutionContext}
 import scala.xml.Unparsed
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait HtmlRenderer extends Flattener {
+trait Renderer {
 
-  implicit def executionContext = ExecutionContext.Implicits.global
+  implicit def executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
+  
+  val flattener: Flattener = ResultFlattener()
 
 
   private[this] def flatResult(optionResult: Option[Result]): Future[List[Code]] = optionResult match {
     case Some(r)  =>
 
       Future {
-        val answer: List[Code] = flatten(r) match {
+        val answer: List[Code] = flattener.flatten(r) match {
           case Nil    => List()
           case x::xs  => (x :: xs).asInstanceOf[List[Code]]
         }
@@ -58,7 +61,7 @@ trait HtmlRenderer extends Flattener {
   private[this] def buildHtml(theCode: Option[Code], relatedWork: List[Code], survey: Boolean): Future[Unparsed] = theCode match {
     case Some(c) => 
       Future(
-        Html.renderCodesnippet(
+        Html.buildCodesnippetHtml(
           c, 
           relatedWork,
           survey
@@ -66,9 +69,14 @@ trait HtmlRenderer extends Flattener {
       )
     case None    => 
       Future(
-        Html.ohSnap()
+        Html.buildErrorPage()
       )
   }
+
+
+  private[this] def buildIndexHtml(): Future[Unparsed] = Future(Html.buildStatusPage())
+
+  private[this] def buildErrorHtml(): Future[Unparsed] = Future(Html.buildErrorPage())
 
 
   private[this] def collectCode(res: Option[Result]): Future[Option[Code]] = {
@@ -83,7 +91,7 @@ trait HtmlRenderer extends Flattener {
    def renderHtml(optionResult: Option[Result], survey: Boolean): Future [Unparsed] = {
     for {
       theCode     <- collectCode(optionResult)
-      storage     <- Future(VesperStorage())
+      storage     <- Future(MongoStorage())
       relatedWork <- collectRelatedWork(theCode, storage)
       unparsed    <- buildHtml(theCode, relatedWork, survey)
     } yield {
@@ -91,6 +99,22 @@ trait HtmlRenderer extends Flattener {
     }
   }
 
+  def renderStatusHtml(): Future[Unparsed] = {
+    for{
+      page <- buildIndexHtml()
+    } yield {
+      page
+    }
+  }
+
+  def renderError(): Future[Unparsed] = {
+    for{
+      page <- buildErrorHtml()
+    } yield {
+      page
+    }
+  }
+
 }
 
-case class CodeHtmlRenderer() extends HtmlRenderer
+case class HtmlRenderer() extends Renderer

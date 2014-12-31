@@ -1,30 +1,34 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.interpret
 
 import edu.ucsc.refactor._
 import edu.ucsc.refactor.spi._
+import edu.ucsc.vesper.http.auth.{Auth, Membership, Role}
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.Models._
-import edu.ucsc.vesper.http.util.{GoogleUrlShortener, Html}
+import edu.ucsc.vesper.http.database.{MongoStorage, Storage}
+import edu.ucsc.vesper.http.domain.{Code, _}
+import edu.ucsc.vesper.http.spi._
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.{Status, Twitter, TwitterFactory}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContextExecutor, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.xml.Unparsed
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Interpreter extends Configuration with VesperConversions with Flattener {
+trait Interpreter extends Configuration with VesperLibraryConversions {
 
   implicit def executionContext: ExecutionContextExecutor = ExecutionContext.Implicits.global
 
   val parser: Parser    = CommandParser()
-  val storage: Storage  = VesperStorage()
+  val storage: Storage  = MongoStorage()
 
   val Curator     = 0
   val Reviewer    = 1
+
+  val flattener: Flattener = ResultFlattener()
 
   private def emitRoles(who:Role, question:ExactRole): Future[Option[Result]] = {
     def f(x: Int): Boolean = if(x == Reviewer) true else false
@@ -72,11 +76,13 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     queried
   }
 
-  private[core] def collectSource(code: Code): Future[Source] = Future {
+  private[interpret] def collectSource(code: Code): Future[Source] = Future {
     asSource(code)
   }
 
-  private[core] def collectIssues(introspector: Introspector, source: Source): Future[mutable.Set[Issue]] = Future {
+  private[interpret] def createRenderer(): Future[Renderer] = Future(HtmlRenderer())
+
+  private[interpret] def collectIssues(introspector: Introspector, source: Source): Future[mutable.Set[Issue]] = Future {
     try {
       asScalaSet(introspector.detectIssues(source))
     } catch {
@@ -86,11 +92,11 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
   }
 
 
-  private[core] def createChange(refactorer: Refactorer, request: ChangeRequest): Future[Change] = Future {
+  private[interpret] def createChange(refactorer: Refactorer, request: ChangeRequest): Future[Change] = Future {
     refactorer.createChange(request)
   }
 
-  private[core] def applyChange(refactorer: Refactorer, change: Change): Future[Commit] = Future {
+  private[interpret] def applyChange(refactorer: Refactorer, change: Change): Future[Commit] = Future {
     refactorer.apply(change)
   }
 
@@ -512,7 +518,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
   private def evalFind(who: Role, find: Find) : Future[Option[Result]] = {
 
-    val answer = flatten(find)
+    val answer = flattener.flatten(find)
 
     answer match {
       case role: ExactRole              => emitRoles(who, role)
@@ -552,7 +558,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     def getDescription(code: Code): Future[String] = Future(code.description)
 
     def getVesperUrl(code: Code): Future[String]   = {
-      val googleShortener: GoogleUrlShortener = new GoogleUrlShortener
+      val googleShortener: UrlShortener = new UrlShortener
       for {
         vesperUrl <- makeVesperUrl(code.id)
         tinyUrl   <- googleShortener.shortenUrl(vesperUrl)
@@ -664,14 +670,14 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
   }
 
-  private[core] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
+  private[interpret] def unknownCommand(): Future[Option[Result]] = Future{Some(Result(failure = Some(Failure("Unknown command!"))))}
 
   def eval(membership: Membership, command: String) : Future[Option[Result]] = eval(membership, parser.parse(command))
 
 
   def render(command: String, survey: String): Future[Unparsed] = {
     if(!command.contains("id:")) {
-      return Future(ohSnap())
+      return errorPage()
     }
 
     def getSurveyValue(survey: String): Future[Boolean] = {
@@ -684,8 +690,6 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
         value
       }
     }
-
-    def createRenderer(): Future[HtmlRenderer] = Future(CodeHtmlRenderer())
 
     for {
       surveyVal   <- getSurveyValue(survey)
@@ -707,7 +711,7 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
 
     val environment: Refactorer = Vesper.createRefactorer()
 
-    val answer = flatten(command)
+    val answer = flattener.flatten(command)
 
     answer match {
       case inspect:Inspect          => evalInspect(environment, inspect)
@@ -724,16 +728,29 @@ trait Interpreter extends Configuration with VesperConversions with Flattener {
     }
   }
 
-  def ohSnap() = {
-    Html.ohSnap()
+
+  def errorPage(): Future[Unparsed] = {
+    for {
+      renderer    <- createRenderer()
+      theCodeHtml <- renderer.renderError()
+    } yield {
+      theCodeHtml
+    }
   }
 
-  def renderStatusPage() =  {
-     Html.renderStatusPage()
+
+
+  def statusPage(): Future[Unparsed]  =  {
+    for {
+      renderer    <- createRenderer()
+      theCodeHtml <- renderer.renderStatusHtml()
+    } yield {
+      theCodeHtml
+    }
   }
 
 }
 
 
-case class VesperInterpreter() extends Interpreter
+case class CommandInterpreter() extends Interpreter
 

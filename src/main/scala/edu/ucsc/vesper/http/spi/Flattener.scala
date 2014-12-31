@@ -1,6 +1,6 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.spi
 
-import edu.ucsc.vesper.http.domain.Models.{Result, Find, Command}
+import edu.ucsc.vesper.http.domain.{Result, Find, Command}
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
@@ -51,3 +51,5 @@ trait Flattener {
   }
 
 }
+
+case class ResultFlattener() extends Flattener

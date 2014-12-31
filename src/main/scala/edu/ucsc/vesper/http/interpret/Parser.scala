@@ -1,6 +1,6 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.interpret
 
-import edu.ucsc.vesper.http.domain.Models._
+import edu.ucsc.vesper.http.domain._
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)

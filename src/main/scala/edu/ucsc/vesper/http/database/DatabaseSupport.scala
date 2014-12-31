@@ -11,7 +11,7 @@ import sprest.reactivemongo.typemappers._
 import sprest.Formats._
 import spray.json.RootJsonFormat
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.Models.Code
+import edu.ucsc.vesper.http.domain.Code
 import scala.concurrent.ExecutionContext.Implicits.global
 
 

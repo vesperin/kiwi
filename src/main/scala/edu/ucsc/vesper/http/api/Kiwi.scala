@@ -1,36 +1,37 @@
 package edu.ucsc.vesper.http.api
 
-import edu.ucsc.vesper.http.core._
-import edu.ucsc.vesper.http.domain.Models.Command
+import edu.ucsc.vesper.http.auth.AuthSupport
+import edu.ucsc.vesper.http.domain.Command
+import edu.ucsc.vesper.http.interpret.CommandInterpreter
 import spray.httpx.SprayJsonSupport._
 import spray.routing.HttpService
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
+trait Kiwi extends HttpService with AsyncSupport with AuthSupport {
 
   /**
-   * The reason I decided to desist from adding thousands of instances of a some Interpreter actor
-   * to perform vesper's operations and use a combination of a VesperInterpreter, detatch() directive,
+   * The reason I decided to desist from adding thousands of instances of some Interpreter actor
+   * to perform Kiwi's operations and use a combination of a CommandInterpreter, detatch() directive,
    * and the onComplete Future directive is the following:
    *
    * `eval` might take some time come up with its Future result (e.g. because it needs to parse the Java code
    * in order to perform the desired refactoring). It then returns the Future because it will again take some time
-   * to actually create a `ChangeSummary`.  I.e. we are potentially dealing with two separate "costly" operations
+   * to actually create a `Result`.  I.e. we are potentially dealing with two separate "costly" operations
    * here:
    *
-   * 1. Parsing code and then performing refactoring
-   * 2. Creating a ChangeSummary object
+   * 1. Parsing code and then performing some operation
+   * 2. Creating a Result object
    *
    * The first operation is "protected" with the detach() and the second one by returning a Future.
    *
    * @see <pre><code> http://www.chrisstucchio.com/blog/2013/actors_vs_futures.html</code></pre>
    *
    */
-  val interpreter : VesperInterpreter = VesperInterpreter()
+  val interpreter : CommandInterpreter = CommandInterpreter()
 
-  val describe =
+  val help =
     path("help") {
       get {
         getFromResource("html/index.html")
@@ -39,7 +40,7 @@ trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
 
   val eval =
     path("eval"){
-      authenticate(withVesperin) { membership =>
+      authenticate(membership) { membership =>
         (post | put) {
           authorize(isCurator(membership)){
             entity(as[Command]) {
@@ -59,7 +60,7 @@ trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
 
   val find =
     path("find") {
-      authenticate(withVesperin) { membership =>
+      authenticate(membership) { membership =>
         get {
           authorize(isReviewer(membership)){
             parameter('q){
@@ -77,7 +78,11 @@ trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
 
   val index = path("") {
     get {
-      complete(interpreter.renderStatusPage())
+      detach(executionContext){
+        onComplete(interpreter.statusPage()){
+          case result => complete(result)
+        }
+      }
     }
   }
 
@@ -99,9 +104,8 @@ trait Vesperin extends HttpService with AsyncSupport with MembershipChecking {
 
   val api =
     pathPrefix("kiwi") {
-      describe ~ eval ~ find ~ render
+      help ~ eval ~ find ~ render
     }
 
-  val vesperRoutes =
-    index ~ api
+  val routes = index ~ api
 }

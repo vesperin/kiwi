@@ -1,17 +1,22 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.auth
 
 import edu.ucsc.vesper.http.config.Configuration
-import edu.ucsc.vesper.http.domain.Models._
 import spray.routing.AuthenticationFailedRejection.CredentialsMissing
 import spray.routing.authentication._
 import spray.routing.{AuthenticationFailedRejection, HttpService, RequestContext}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
+case class Role(id: Int, description: String)
+case class Auth(userId: String, token: String)
+case class Member(username:String, role: Int)
+case class Membership(auth: Auth, role: Role)
+
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait MembershipChecking extends Configuration {
+trait AuthSupport extends Configuration {
   this: HttpService =>
 
   implicit def executionContext: ExecutionContext = actorRefFactory.dispatcher
@@ -73,7 +78,7 @@ trait MembershipChecking extends Configuration {
     membership.role.id == 0 || membership.role.id == 1
   }
 
-  def withVesperin: RequestContext => Future[Authentication[Membership]] = {
+  def membership: RequestContext => Future[Authentication[Membership]] = {
     ctx: RequestContext =>
       val token = getToken(ctx)
       if(token.isEmpty){

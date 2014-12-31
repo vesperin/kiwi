@@ -1,18 +1,18 @@
-package edu.ucsc.vesper.http.core
+package edu.ucsc.vesper.http.spi
 
 import java.util.Date
 
 import edu.ucsc.refactor.spi.{CommitSummary, Name, Refactoring}
 import edu.ucsc.refactor.util.{Note, SourceFormatter}
 import edu.ucsc.refactor.{Commit, Source}
-import edu.ucsc.vesper.http.domain.Models.{Code, Comment, Draft}
+import edu.ucsc.vesper.http.domain.{Code, Comment, Draft}
 
 import scala.collection.mutable
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait VesperConversions {
+trait VesperLibraryConversions {
   def asCode(source: Source): Code = {
     val sourceId: Option[String]  = if (source.getId != null) Some(source.getId) else None
     val sourceName: String        = source.getName
