@@ -19,7 +19,9 @@ trait Flattener {
       command.publish,
       command.find,
       command.persist,
-      command.trim
+      command.trim,
+      command.multistage,
+      command.summarize
     ).flatten
 
     if (answer == Nil) Nil else answer(0)
@@ -44,7 +46,9 @@ trait Flattener {
       result.info,
       result.warnings,
       result.failure,
-      result.sources
+      result.sources,
+      result.stages,
+      result.stage
     ).flatten
 
     if (answer == Nil) Nil else answer(0)

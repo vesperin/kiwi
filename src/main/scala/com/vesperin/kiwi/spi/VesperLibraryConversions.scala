@@ -82,13 +82,13 @@ trait VesperLibraryConversions {
   }
 
 
-  def asFormatterDraft(source: Source, cause: String, description: String): Draft = {
+  def asFormattedDraft(source: Source, cause: String, description: String): Draft = {
     val formattedContent: String  = new SourceFormatter().format(source.getContents)
 
-    asFormatterDraft(source, Source.from(source, formattedContent), cause, description)
+    asFormattedDraft(source, Source.from(source, formattedContent), cause, description)
   }
 
-  def asFormatterDraft(before: Source, after: Source, cause: String, description: String): Draft = {
+  def asFormattedDraft(before: Source, after: Source, cause: String, description: String): Draft = {
     Draft(
       cause,
       description,

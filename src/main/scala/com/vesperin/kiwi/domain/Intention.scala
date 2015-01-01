@@ -28,6 +28,9 @@ case class Persist(source: Code) extends Intention
 // """{"source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"}, "where": ["123", "132"]}"""
 case class Trim(source: Code, where: List[Int]) extends Intention
 
+case class Multistage(source: Code, budget: Int = 15) extends Intention
+case class Summarize(stage: Stage) extends Intention
+
 object Inspect extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val inspectFormats = jsonFormat2(Inspect.apply)
 }
@@ -66,4 +69,12 @@ object Persist extends DefaultJsonProtocol with SprayJsonSupport {
 
 object Trim extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val clipFormats = jsonFormat2(Trim.apply)
+}
+
+object Multistage extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val multiStageFormat = jsonFormat2(Multistage.apply)
+}
+
+object Summarize extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val summarizeFormat = jsonFormat1(Summarize.apply)
 }

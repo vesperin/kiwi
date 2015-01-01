@@ -1,12 +1,13 @@
 package com.vesperin.kiwi.interpret
 
-import edu.ucsc.refactor._
-import edu.ucsc.refactor.spi._
 import com.vesperin.kiwi.auth.{Auth, Membership, Role}
 import com.vesperin.kiwi.config.Configuration
 import com.vesperin.kiwi.database.{MongoStorage, Storage}
 import com.vesperin.kiwi.domain.{Code, _}
 import com.vesperin.kiwi.spi._
+import edu.ucsc.refactor._
+import edu.ucsc.refactor.spi._
+import edu.ucsc.refactor.util.SourceFormatter
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.{Status, Twitter, TwitterFactory}
 
@@ -220,6 +221,110 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
 
+  private def evalMultistage(stage: Multistage): Future[Option[Result]] = {
+
+    def generateStages(introspector: Introspector, source: Source): Future[java.util.List[Clip]] = Future {
+      introspector.multiStage(source)
+    }
+
+    def summarizeStages(introspector: Introspector, budget:Int, stages: java.util.List[Clip]): Future[java.util.Map[Clip, java.util.List[Location]]] = Future {
+      introspector.summarize(stages, budget)
+    }
+
+    def convertJavaMapToScalaMap(stages: java.util.Map[Clip, java.util.List[Location]]): Future[Map[Clip, List[Location]]] = Future {
+      val result: collection.Map[Clip, List[Location]] = stages.mapValues(_.toList)
+
+      result.toMap
+    }
+
+
+    def produceResult(stages: Map[Clip, List[Location]], budget: Int): Future[Option[Result]] =  Future {
+
+      def toList(loc: List[Location]): List[List[Int]] = {
+        val stages: mutable.Buffer[List[Int]] = mutable.Buffer.empty[List[Int]]
+        for( l <- loc){
+          stages += List(l.getStart.getOffset, l.getEnd.getOffset)
+        }
+
+        stages.toList
+      }
+
+      val result: mutable.Buffer[Stage] = mutable.Buffer.empty[Stage]
+      for((k, v) <- stages){
+        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asCode(k.getSource), budget = budget)
+      }
+
+      Some(
+        Result(
+          stages = Some(
+            MultiStaged(
+              result.toList
+            )
+          )
+        )
+      )
+    }
+
+    val multiStaged = for {
+      source         <- collectSource(stage.source)
+      introspector   <- createIntrospector()
+      stages         <- generateStages(introspector, source)
+      summaries      <- summarizeStages(introspector, stage.budget, stages)
+      scalaSummaries <- convertJavaMapToScalaMap(summaries)
+      result         <- produceResult(scalaSummaries, stage.budget)
+    } yield {
+      result
+    }
+
+    multiStaged
+  }
+
+  private def evalSummarize(summarize: Summarize): Future[Option[Result]] = {
+    def foldableLocations(introspector: Introspector, stage: Stage): Future[List[Location]] = Future {
+
+      val src: Source         = asSource(stage.source)
+      asScalaBuffer(introspector.summarize(stage.method, src, stage.budget)).toList
+    }
+
+    def toListOfListOfInts(loc: List[Location]): Future[List[List[Int]]] = Future {
+      val stages: mutable.Buffer[List[Int]] = mutable.Buffer.empty[List[Int]]
+      for( l <- loc){
+        stages += List(l.getStart.getOffset, l.getEnd.getOffset)
+      }
+
+      stages.toList
+    }
+
+    def summarizeCode(stage: Stage, locations: List[List[Int]]): Future[Option[Result]] = Future {
+       Some(
+         Result(
+           stage = Some(
+             Stage(
+               stage.label,
+               stage.method,
+               stage.isBase,
+               locations,
+               stage.source,
+               stage.budget
+             )
+           )
+         )
+       )
+    }
+
+    val summary =  for {
+      introspector <- createIntrospector()
+      foldable     <- foldableLocations(introspector, summarize.stage)
+      locations    <- toListOfListOfInts(foldable)
+      sum          <- summarizeCode(summarize.stage, locations)
+    } yield {
+      sum
+    }
+
+    summary
+  }
+
+
   private def evalTrim(refactorer: Refactorer, trim: Trim): Future[Option[Result]] = {
     val where:List[Int]       = trim.where
     val vesperSource: Source  = asSource(trim.source)
@@ -353,31 +458,37 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
   private def evalFormat(refactorer: Refactorer, format: Format): Future[Option[Result]] = {
 
-    def createRequest(source: Source): Future[ChangeRequest] = Future {
-      ChangeRequest.reformatSource(source)
-    }
-
-    def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
-      var result: Option[Result]  = None
-      commit != null && commit.isValidCommit match {
-        case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
-        case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
-      }
-
-      result
+    def produceResult(before: Source, after: Source): Future[Option[Result]] = Future {
+      Some(
+        Result(
+          draft = Some(
+            asFormattedDraft(
+              before,
+              after,
+              "Reformat Code",
+              "Reformatted code"
+            )
+          )
+        ))
     }
 
     val reformatted = for {
-      source   <- collectSource(format.source)
-      request  <- createRequest(source)
-      change   <- createChange(refactorer, request)
-      commit   <- applyChange(refactorer, change)
-      result   <- produceResult(change, commit)
+      source    <- collectSource(format.source)
+      formatted <- reformat(source)
+      result    <- produceResult(source, formatted)
     } yield {
       result
     }
 
     reformatted
+  }
+
+
+  private def reformat(code: Source): Future[Source] = Future {
+    val formattedContent: String      = new SourceFormatter().format(code.getContents)
+    val formattedToGoogleStyle:Source = Source.from(code, formattedContent)
+
+    formattedToGoogleStyle
   }
 
 
@@ -415,18 +526,6 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       }
     }
 
-
-    def reformat(refactorer: Refactorer, code: Source): Future[Source] = Future {
-      val request: ChangeRequest = ChangeRequest.reformatSource(code)
-      val change: Change = refactorer.createChange(request)
-      val commit: Commit = refactorer.apply(change)
-      if(commit != null && commit.isValidCommit){
-        commit.getSourceAfterChange
-      } else {
-        commit.getSourceBeforeChange
-      }
-    }
-
     def deduplicate(refactorer: Refactorer, before: Source, issues: mutable.Set[Issue]): Future[Source] = Future {
       // http://stackoverflow.com/questions/24571444/get-element-from-set
 
@@ -443,7 +542,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       Some(
         Result(
           draft = Some(
-            asFormatterDraft(
+            asFormattedDraft(
               before,
               after,
               "Full cleanup",
@@ -456,7 +555,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
     val cleanedUp = for {
       source       <- collectSource(cleanup.source)
-      formatted    <- reformat(refactorer, source)
+      formatted    <- reformat(source)
       optimized    <- optimize(refactorer, formatted)
       issues       <- detectIssues(optimized)
       deduplicated <- deduplicate(refactorer, optimized, issues)
@@ -724,6 +823,8 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
       case trim: Trim               => evalTrim(environment, trim)
+      case stage: Multistage        => evalMultistage(stage)
+      case summarize: Summarize     => evalSummarize(summarize)
       case _                        => unknownCommand()
     }
   }
