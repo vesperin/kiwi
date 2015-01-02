@@ -280,9 +280,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
   private def evalSummarize(summarize: Summarize): Future[Option[Result]] = {
-    def foldableLocations(introspector: Introspector, stage: Stage): Future[List[Location]] = Future {
-
-      val src: Source         = asSource(stage.source)
+    def foldableLocations(introspector: Introspector, stage: Stage, src: Source): Future[List[Location]] = Future {
       asScalaBuffer(introspector.summarize(stage.method, src, stage.budget)).toList
     }
 
@@ -314,7 +312,9 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
     val summary =  for {
       introspector <- createIntrospector()
-      foldable     <- foldableLocations(introspector, summarize.stage)
+      source       <- collectSource(summarize.stage.source)
+      formatted    <- reformat(source)
+      foldable     <- foldableLocations(introspector, summarize.stage, formatted)
       locations    <- toListOfListOfInts(foldable)
       sum          <- summarizeCode(summarize.stage, locations)
     } yield {
