@@ -9,7 +9,7 @@ import spray.routing.HttpService
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
-trait Kiwi extends HttpService with AsyncSupport with AuthSupport {
+trait Kiwi extends HttpService with AsyncSupport with AuthSupport with CORS {
 
   /**
    * The reason I decided to desist from adding thousands of instances of some Interpreter actor
@@ -103,8 +103,10 @@ trait Kiwi extends HttpService with AsyncSupport with AuthSupport {
     }
 
   val api =
-    pathPrefix("kiwi") {
-      help ~ eval ~ find ~ render
+    cors {
+      pathPrefix("kiwi") {
+        help ~ eval ~ find ~ render
+      }
     }
 
   val routes = index ~ api
