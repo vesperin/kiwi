@@ -325,7 +325,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
 
-  private def evalTrim(refactorer: Refactorer, trim: Trim): Future[Option[Result]] = {
+  private def evalTrim(refactorer: Refactorer, trim: Slice): Future[Option[Result]] = {
     val where:List[Int]       = trim.where
     val vesperSource: Source  = asSource(trim.source)
 
@@ -822,7 +822,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
-      case trim: Trim               => evalTrim(environment, trim)
+      case trim: Slice               => evalTrim(environment, trim)
       case stage: Multistage        => evalMultistage(stage)
       case summarize: Summarize     => evalSummarize(summarize)
       case _                        => unknownCommand()

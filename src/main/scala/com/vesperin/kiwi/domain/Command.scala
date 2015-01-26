@@ -18,7 +18,7 @@ case class Command(
       publish:      Option[Publish]     = None,
       persist:      Option[Persist]     = None,
       find:         Option[Find]        = None,
-      trim:         Option[Trim]        = None,
+      slice:        Option[Slice]       = None,
       multistage:   Option[Multistage]  = None,
       summarize:    Option[Summarize]   = None
 )

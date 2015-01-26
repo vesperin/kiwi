@@ -19,7 +19,7 @@ trait Flattener {
       command.publish,
       command.find,
       command.persist,
-      command.trim,
+      command.slice,
       command.multistage,
       command.summarize
     ).flatten
