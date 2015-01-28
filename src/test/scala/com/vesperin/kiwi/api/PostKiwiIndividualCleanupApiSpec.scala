@@ -54,15 +54,24 @@ class PostKiwiIndividualCleanupApiSpec extends Specification with Specs2RouteTes
       Post("/kiwi/eval?auth_token=legolas", Command(deduplicate = Some(Deduplicate(Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}"))))) ~>
         sealRoute(routes) ~> check {
         responseAs[Result].draft.get.before === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
+        responseAs[Result].draft.get.after  === Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}")
       }
     }
 
     "Return a deduplicate request in JSON form for POST requests to the root path" in {
-      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":true }}""" )) ~>
+      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Name.java", "description":"Name class", "content":"class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":false }}""" )) ~>
         sealRoute(routes) ~> check {
         responseAs[Result].draft.get.before mustEqual Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }\n}")
-        responseAs[Result].draft.get.after  mustEqual Code(name = "Name.java", description = "Name class", content = "class Name {\n\t/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }\n}")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Name.java", description = "Name class", content = "class Name {\n  /** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }\n}")
+      }
+    }
+
+
+    "Return a deduplicate request (with preprocessing) in JSON form for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"name": "Scratched.java", "description":"Scratched class", "content":"/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid baam(){ System.out.println(1); }\nvoid beem(){ System.out.println(1); }\nvoid buum(){ baam(); }", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":true }}""" )) ~>
+        sealRoute(routes) ~> check {
+        responseAs[Result].draft.get.before mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid baam(){ System.out.println(1); }\nvoid beem(){ System.out.println(1); }\nvoid buum(){ baam(); }")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid buum(){ boom(); }")
       }
     }
 

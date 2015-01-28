@@ -11,8 +11,7 @@ sealed trait Intention
 // e.g., """{ "source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"} }"""
 case class Inspect(
      source: Code,
-     imports:Boolean = false,
-     preprocess:Boolean = false
+     imports:Boolean = false
 ) extends Intention
 
 
@@ -86,7 +85,7 @@ case class Summarize(
 
 
 object Inspect extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val inspectFormats = jsonFormat3(Inspect.apply)
+  implicit val inspectFormats = jsonFormat2(Inspect.apply)
 }
 
 object Remove extends DefaultJsonProtocol with SprayJsonSupport {

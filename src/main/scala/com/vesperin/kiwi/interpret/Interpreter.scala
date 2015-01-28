@@ -7,7 +7,7 @@ import com.vesperin.kiwi.domain.{Code, _}
 import com.vesperin.kiwi.spi._
 import edu.ucsc.refactor._
 import edu.ucsc.refactor.spi._
-import edu.ucsc.refactor.util.SourceFormatter
+import edu.ucsc.refactor.util.{Locations, StringUtil, SourceFormatter}
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.{Status, Twitter, TwitterFactory}
 
@@ -28,6 +28,8 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
   val Curator     = 0
   val Reviewer    = 1
+
+  val name: String = "Scratched"
 
   val flattener: Flattener = ResultFlattener()
 
@@ -77,8 +79,27 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     queried
   }
 
-  private[interpret] def collectSource(code: Code): Future[Source] = Future {
-    asSource(code)
+  private[interpret] def collectSource(code: Code, preprocess: Boolean = false): Future[Source] = Future {
+    val result: Source = preprocess match {
+      case true  =>
+        val intro: Introspector = Vesper.createIntrospector()
+        val a: Source = asSource(code)
+        val header: String = Source.missingHeader(intro, a, name)
+        Source.wrap(a, name, header)
+      case false => asSource(code)
+    }
+
+    result
+  }
+
+
+  private[interpret] def createSelection(source: Source, where: List[Int], preprocess:Boolean): Future[SourceSelection] = Future {
+    val select: SourceSelection = preprocess match {
+      case true  => Vesper.createAdjustedSelection(where(0), where(1), source)
+      case false => new SourceSelection(source, where(0), where(1))
+    }
+
+    select
   }
 
   private[interpret] def createRenderer(): Future[Renderer] = Future(HtmlRenderer())
@@ -178,29 +199,61 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     }
   }
 
-  private def removeMember(refactorer:Refactorer, what: String, where: List[Int], source: Source): Future[Option[Result]] = {
+  private def createRequest(selection: SourceSelection, what: String): Future[ChangeRequest] = Future {
+    createRemoveChangeRequest(what, selection)
+  }
+
+
+  private def createRequest(selection: SourceSelection, what: String, name: String): Future[ChangeRequest] = Future {
+    createRenameChangeRequest(what, name, selection)
+  }
+
+  private def createRequest(selection: SourceSelection): Future[ChangeRequest] = Future {
+    ChangeRequest.clipSelection(selection)
+  }
+
+  private def produceResult(change: Change, before: Source, commit: Commit, preprocess:Boolean): Future[Option[Result]] = Future {
+    var result: Option[Result]  = None
+    commit != null && commit.isValidCommit match {
+      case true => preprocess match {
+        case true  =>
+          result = Some(
+            Result(
+              draft = Some(
+                asFormattedDraft(
+                  before,
+                  Source.unwrap(
+                    commit.getSourceAfterChange,
+                    Source.currentHeader(
+                      commit.getSourceAfterChange,
+                      StringUtil.extractFileName(commit.getSourceAfterChange.getName)
+                    )
+                  ),
+                  commit.getNameOfChange.getKey,
+                  description(commit.getNameOfChange.getKey)
+                )
+              )
+            )
+          )
+        case false =>
+          result = Some(Result(draft = Some(asFormattedDraft(commit))))
+      }
+      case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
+    }
+
+    result
+  }
+
+  private def removeMember(refactorer:Refactorer, what: String, where: List[Int], code: Code, preprocess: Boolean): Future[Option[Result]] = {
     try {
-      val createRequest: Future[ChangeRequest] = Future {
-        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
-        createRemoveChangeRequest(what, select)
-      }
-
-      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
-        var result: Option[Result]  = None
-        commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft = Some(asDraft(commit))))
-          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
-        }
-
-        result
-      }
-
 
       val removed = for {
-        request  <- createRequest
-        change   <- createChange(refactorer, request)
-        commit   <- applyChange(refactorer, change)
-        result   <- produceResult(change, commit)
+        before    <- collectSource(code)
+        selection <- createSelection(before, where, preprocess)
+        request   <- createRequest(selection, what)
+        change    <- createChange(refactorer, request)
+        commit    <- applyChange(refactorer, change)
+        result    <- produceResult(change, before, commit, preprocess)
       } yield {
         result
       }
@@ -213,11 +266,12 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
   private def evalRemove(refactorer: Refactorer, delete: Remove): Future[Option[Result]] = {
-    val what:String           = delete.what
-    val where:List[Int]       = delete.where
-    val vesperSource: Source  = asSource(delete.source)
+    val what:String             = delete.what
+    val where:List[Int]         = delete.where
+    val preprocessing: Boolean  = delete.preprocess
+    val code: Code              = delete.source
 
-    removeMember(refactorer, what, where, vesperSource)
+    removeMember(refactorer, what, where, code, preprocessing)
   }
 
 
@@ -231,8 +285,21 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       introspector.summarize(stages, budget)
     }
 
-    def convertJavaMapToScalaMap(stages: java.util.Map[Clip, java.util.List[Location]]): Future[Map[Clip, List[Location]]] = Future {
-      val result: collection.Map[Clip, List[Location]] = stages.mapValues(_.toList)
+    def convertJavaMapToScalaMap(stages: java.util.Map[Clip, java.util.List[Location]],
+        preprocess:Boolean = false): Future[Map[Clip, List[Location]]] = Future {
+      val javaMap = preprocess match {
+        case true  => CodeIntrospector.adjustClipspace(stages)
+        case false => stages
+      }
+
+      // http://stackoverflow.com/questions/18649244/how-to-sort-scala-maps-by-length-of-the-key-assuming-keys-are-strings
+      // todo(Huascar) investigate why we are getting an unsorted map during the java-to-scala map conversion
+      // ; especially when the `vesper library` returns a sorted map.
+      val result: collection.Map[Clip, List[Location]] = javaMap.mapValues(_.toList)
+        .toSeq
+        .sortBy(_._1.getSource.getContents.length)
+        .reverse
+        .toMap
 
       result.toMap
     }
@@ -251,7 +318,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
       val result: mutable.Buffer[Stage] = mutable.Buffer.empty[Stage]
       for((k, v) <- stages){
-        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asCode(k.getSource), budget = budget)
+        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asFormattedCode(k.getSource), budget = budget)
       }
 
       Some(
@@ -266,11 +333,11 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     }
 
     val multiStaged = for {
-      source         <- collectSource(stage.source)
+      source         <- collectSource(stage.source, stage.preprocess)
       introspector   <- createIntrospector()
       stages         <- generateStages(introspector, source)
       summaries      <- summarizeStages(introspector, stage.budget, stages)
-      scalaSummaries <- convertJavaMapToScalaMap(summaries)
+      scalaSummaries <- convertJavaMapToScalaMap(summaries, stage.preprocess)
       result         <- produceResult(scalaSummaries, stage.budget)
     } yield {
       result
@@ -280,8 +347,21 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
   private def evalSummarize(summarize: Summarize): Future[Option[Result]] = {
-    def foldableLocations(introspector: Introspector, stage: Stage, src: Source): Future[List[Location]] = Future {
-      asScalaBuffer(introspector.summarize(stage.method, src, stage.budget)).toList
+    def foldableLocations(introspector: Introspector, stage: Stage, src: Source, preprocess: Boolean): Future[List[Location]] = Future {
+
+      val resultList = preprocess match {
+        case true  =>
+          val folds = introspector.summarize(stage.method, src, stage.budget)
+          val header: String = Source.currentHeader(src, StringUtil.extractFileName(src.getName))
+
+          val adjustedSrc: Source = Source.unwrap(src, header)
+
+          Locations.adjustLocations(folds, adjustedSrc)
+        case false =>
+          introspector.summarize(stage.method, src, stage.budget)
+      }
+
+      asScalaBuffer(resultList).toList
     }
 
     def toListOfListOfInts(loc: List[Location]): Future[List[List[Int]]] = Future {
@@ -312,9 +392,8 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
     val summary =  for {
       introspector <- createIntrospector()
-      source       <- collectSource(summarize.stage.source)
-      formatted    <- reformat(source)
-      foldable     <- foldableLocations(introspector, summarize.stage, formatted)
+      source       <- collectSource(summarize.stage.source, summarize.preprocess)
+      foldable     <- foldableLocations(introspector, summarize.stage, source, summarize.preprocess)
       locations    <- toListOfListOfInts(foldable)
       sum          <- summarizeCode(summarize.stage, locations)
     } yield {
@@ -325,37 +404,25 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
 
-  private def evalTrim(refactorer: Refactorer, trim: Slice): Future[Option[Result]] = {
-    val where:List[Int]       = trim.where
-    val vesperSource: Source  = asSource(trim.source)
+  private def evalSlice(refactorer: Refactorer, slice: Slice): Future[Option[Result]] = {
+    val where:List[Int]      = slice.where
+    val preprocess: Boolean  = slice.preprocess
+    val code: Code           = slice.source
 
-    clipSelection(refactorer, where, vesperSource)
+    clipSelection(refactorer, where, code, preprocess)
   }
 
 
-  private def clipSelection(refactorer:Refactorer, where: List[Int], source: Source): Future[Option[Result]] = {
+  private def clipSelection(refactorer:Refactorer, where: List[Int], code: Code, preprocess: Boolean): Future[Option[Result]] = {
     try {
-      val createRequest: Future[ChangeRequest] = Future {
-        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
-        ChangeRequest.clipSelection(select)
-      }
-
-      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
-        var result: Option[Result]  = None
-        commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
-          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
-        }
-
-        result
-      }
-
 
       val removed = for {
-        request  <- createRequest
-        change   <- createChange(refactorer, request)
-        commit   <- applyChange(refactorer, change)
-        result   <- produceResult(change, commit)
+        before    <- collectSource(code)
+        selection <- createSelection(before, where, preprocess)
+        request   <- createRequest(selection)
+        change    <- createChange(refactorer, request)
+        commit    <- applyChange(refactorer, change)
+        result    <- produceResult(change, before, commit, preprocess)
       } yield {
         result
       }
@@ -378,30 +445,16 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     }
   }
 
-  private def renameMember(refactorer: Refactorer, what: String, name: String, where: List[Int], source: Source): Future[Option[Result]] = {
+  private def renameMember(refactorer: Refactorer, what: String, name: String, where: List[Int], code: Code, preprocess: Boolean): Future[Option[Result]] = {
     try {
 
-      val createRequest: Future[ChangeRequest] = Future {
-        val select: SourceSelection = new SourceSelection(source, where(0), where(1))
-        createRenameChangeRequest(what, name, select)
-      }
-
-      def produceResult(change: Change, commit: Commit): Future[Option[Result]] = Future {
-        var result: Option[Result]  = None
-        commit != null && commit.isValidCommit match {
-          case true =>  result = Some(Result(draft   = Some(asFormattedDraft(commit))))
-          case false => result = Some(Result(failure = Some(Failure(change.getErrors.mkString(" ")))))
-        }
-
-        result
-      }
-
-
       val renamed = for {
-        request  <- createRequest
-        change   <- createChange(refactorer, request)
-        commit   <- applyChange(refactorer, change)
-        result   <- produceResult(change, commit)
+        before    <- collectSource(code)
+        selection <- createSelection(before, where, preprocess)
+        request   <- createRequest(selection, what, name)
+        change    <- createChange(refactorer, request)
+        commit    <- applyChange(refactorer, change)
+        result    <- produceResult(change, before, commit, preprocess)
       } yield {
         result
       }
@@ -418,12 +471,14 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
   private def evalRename(refactorer: Refactorer, rename: Rename): Future[Option[Result]] = {
-    val what:String           = rename.what
-    val where:List[Int]       = rename.where
-    val name: String          = rename.to
-    val vesperSource: Source  = asSource(rename.source)
 
-    renameMember(refactorer, what, name, where, vesperSource)
+    val what:String             = rename.what
+    val name: String            = rename.to
+    val where:List[Int]         = rename.where
+    val preprocessing: Boolean  = rename.preprocess
+    val code: Code              = rename.source
+
+    renameMember(refactorer, what, name, where, code, preprocessing)
   }
 
   private def evalOptimize(refactorer: Refactorer, optimize: Optimize): Future[Option[Result]] = {
@@ -492,53 +547,70 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
 
+  private def optimize(refactorer: Refactorer, code: Source, preprocess: Boolean = false): Future[Source] = Future {
+
+    val result: Source = preprocess match {
+      case true  => code // if true, then we don't need to optimize imports
+      case false =>
+        val request: ChangeRequest = ChangeRequest.optimizeImports(code)
+        val change: Change = refactorer.createChange(request)
+        val commit: Commit = refactorer.apply(change)
+        if(commit != null && commit.isValidCommit){
+          commit.getSourceAfterChange
+        } else {
+          commit.getSourceBeforeChange
+        }
+    }
+
+    result
+  }
+
+
+  private def filterNonDeduplicateIssues(issues:mutable.Set[Issue]): Future[mutable.Set[Issue]] = Future {
+    issues.filter(i => Names.hasAvailableResponse(i.getName.asInstanceOf[Smell])
+      && Names.from(i.getName.asInstanceOf[Smell]).isSame(Refactoring.DEDUPLICATE))
+  }
+
+
+  private def applyChanges(refactorer: Refactorer, filteredIssues:mutable.Set[Issue]): Future[mutable.Buffer[Commit]] = Future {
+    val commits: mutable.Buffer[Commit] = mutable.Buffer.empty[Commit]
+    for(i <- filteredIssues){
+      val change: Change = refactorer.createChange(ChangeRequest.forIssue(i))
+      val commit: Commit = refactorer.apply(change)
+      commits += commit
+    }
+
+    commits
+  }
+
+
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
 
-    def detectIssues(source: Source): Future[mutable.Set[Issue]] = Future {
-      val introspector: Introspector = Vesper.createIntrospector()
-      val result:mutable.Set[Issue] = asScalaSet(introspector.detectIssues(source))
-
-      val issues: mutable.Set[Issue] = result.filter(
-        i => Names.hasAvailableResponse(i.getName.asInstanceOf[Smell])
-          && Names.from(i.getName.asInstanceOf[Smell]).isSame(Refactoring.DEDUPLICATE))
-
-
-      issues
-    }
-
-
-    def createCommit(issue: Issue): Commit = {
-      val refactor: Refactorer = Vesper.createRefactorer()
-      val change: Change = refactor.createChange(ChangeRequest.forIssue(issue))
-      val commit: Commit = refactor.apply(change)
-
-      commit
-    }
-
-    def optimize(refactorer: Refactorer, code: Source): Future[Source] = Future {
-      val request: ChangeRequest = ChangeRequest.optimizeImports(code)
-      val change: Change = refactorer.createChange(request)
-      val commit: Commit = refactorer.apply(change)
-      if(commit != null && commit.isValidCommit){
-        commit.getSourceAfterChange
-      } else {
-        commit.getSourceBeforeChange
-      }
-    }
-
-    def deduplicate(refactorer: Refactorer, before: Source, issues: mutable.Set[Issue]): Future[Source] = Future {
+    def unwrapped(before: Source, changes: mutable.Buffer[Commit], preprocess:Boolean): Future[Source] = Future {
       // http://stackoverflow.com/questions/24571444/get-element-from-set
 
-      val commit: Commit = if (issues.isEmpty) null else createCommit(issues.toSeq(0))
+      val commit: Commit = if (changes.isEmpty) null else changes.toSeq(0)
       if(commit != null && commit.isValidCommit) {
-         commit.getSourceAfterChange
+        preprocess match {
+          case true  =>
+            Source.unwrap(
+              commit.getSourceAfterChange,
+              Source.currentHeader(
+                commit.getSourceAfterChange,
+                StringUtil.extractFileName(commit.getSourceAfterChange.getName)
+              )
+            )
+          case false =>
+            commit.getSourceAfterChange
+        }
+
       } else {
          before
       }
     }
 
 
-    def produceResult(before: Source, after: Source): Future[Option[Result]] = Future {
+    def produceResult(before: Source, after: Source, preprocess: Boolean): Future[Option[Result]] = Future {
       Some(
         Result(
           draft = Some(
@@ -554,12 +626,15 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
 
     val cleanedUp = for {
-      source       <- collectSource(cleanup.source)
-      formatted    <- reformat(source)
-      optimized    <- optimize(refactorer, formatted)
-      issues       <- detectIssues(optimized)
-      deduplicated <- deduplicate(refactorer, optimized, issues)
-      result       <- produceResult(formatted, deduplicated)
+      before       <- collectSource(cleanup.source)
+      preprocessed <- collectSource(cleanup.source, cleanup.preprocess)
+      optimized    <- optimize(refactorer, preprocessed, cleanup.preprocess)
+      introspector <- createIntrospector()
+      issues       <- collectIssues(introspector, optimized)
+      duplicates   <- filterNonDeduplicateIssues(issues)
+      changes      <- applyChanges(refactorer, duplicates)
+      after        <- unwrapped(before, changes, cleanup.preprocess)
+      result       <- produceResult(before, after, cleanup.preprocess)
     } yield {
       result
     }
@@ -569,29 +644,40 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
   private def evalDeduplicate(refactorer: Refactorer, deduplicate: Deduplicate): Future[Option[Result]] = {
 
-    def filterNonDeduplicateIssues(issues:mutable.Set[Issue]): Future[mutable.Set[Issue]] = Future {
-       issues.filter(i => Names.hasAvailableResponse(i.getName.asInstanceOf[Smell]) && Names.from(i.getName.asInstanceOf[Smell]).isSame(Refactoring.DEDUPLICATE))
-    }
-
-
-    def applyChanges(filteredIssues:mutable.Set[Issue]): Future[mutable.Buffer[Commit]] = Future {
-      val commits: mutable.Buffer[Commit] = mutable.Buffer.empty[Commit]
-      for(i <- filteredIssues){
-        val change: Change = refactorer.createChange(ChangeRequest.forIssue(i))
-        val commit: Commit = refactorer.apply(change)
-        commits += commit
-      }
-
-      commits
-    }
-
-
-    def produceResult(commits: mutable.Buffer[Commit]): Future[Option[Result]] = Future {
+    def produceResult(commits: mutable.Buffer[Commit], preprocess: Boolean): Future[Option[Result]] = Future {
       var result: Option[Result]  = Some(Result(info  = Some(Info(List("everything looks clear!")))))
 
       for(c <- commits){
         c != null && c.isValidCommit match {
-          case true   =>  result = Some(Result(draft   = Some(asDraft(c))))
+          case true   => preprocess match {
+            case true  =>
+              result = Some(
+                Result(
+                  draft = Some(
+                    asFormattedDraft(
+                      Source.unwrap(
+                        c.getSourceBeforeChange,
+                        Source.currentHeader(
+                          c.getSourceBeforeChange,
+                          StringUtil.extractFileName(c.getSourceBeforeChange.getName)
+                        )
+                      ),
+                      Source.unwrap(
+                        c.getSourceAfterChange,
+                        Source.currentHeader(
+                          c.getSourceAfterChange,
+                          StringUtil.extractFileName(c.getSourceAfterChange.getName)
+                        )
+                      ),
+                      c.getNameOfChange.getKey,
+                      description(c.getNameOfChange.getKey)
+                    )
+                  )
+                )
+              )
+            case false =>
+              result = Some(Result(draft = Some(asFormattedDraft(c))))
+          }
           case false  =>  result = Some(Result(failure = Some(Failure("invalid commit"))))
         }
       }
@@ -600,12 +686,12 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     }
 
     val deduplicated = for {
-      source   <- collectSource(deduplicate.source)
+      source   <- collectSource(deduplicate.source, deduplicate.preprocess)
       intros   <- createIntrospector()
       issues   <- collectIssues(intros, source)
       fIssues  <- filterNonDeduplicateIssues(issues)
-      changes  <- applyChanges(fIssues)
-      result   <- produceResult(changes)
+      changes  <- applyChanges(refactorer, fIssues)
+      result   <- produceResult(changes, deduplicate.preprocess)
     } yield {
       result
     }
@@ -822,7 +908,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
-      case trim: Slice               => evalTrim(environment, trim)
+      case slice: Slice             => evalSlice(environment, slice)
       case stage: Multistage        => evalMultistage(stage)
       case summarize: Summarize     => evalSummarize(summarize)
       case _                        => unknownCommand()
