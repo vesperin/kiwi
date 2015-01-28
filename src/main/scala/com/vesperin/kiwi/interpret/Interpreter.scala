@@ -352,9 +352,8 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       val resultList = preprocess match {
         case true  =>
           val folds = introspector.summarize(stage.method, src, stage.budget)
-          val header: String = Source.currentHeader(src, StringUtil.extractFileName(src.getName))
 
-          val adjustedSrc: Source = Source.unwrap(src, header)
+          val adjustedSrc: Source = Source.unwrap(src)
 
           Locations.adjustLocations(folds, adjustedSrc)
         case false =>
