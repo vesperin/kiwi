@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 class PostKiwiMultistageApiSpec extends Specification with Specs2RouteTest with Kiwi {
   def actorRefFactory = system
 
-  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(2, SECONDS))
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
   "Kiwi" should {
     "Return a multistage request containing a list of imports for POST requests to the root path" in {

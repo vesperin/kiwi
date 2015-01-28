@@ -6,11 +6,15 @@ import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes
 import spray.testkit.Specs2RouteTest
 
+import scala.concurrent.duration._
+
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 class GetKiwiApiSpec extends Specification with Specs2RouteTest with Kiwi  {
   def actorRefFactory = system
+
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
 
   "Kiwi" should {
