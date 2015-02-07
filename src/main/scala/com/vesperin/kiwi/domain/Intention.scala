@@ -65,6 +65,10 @@ case class Persist(
      source: Code
 ) extends Intention
 
+case class Preprocess(
+     source: Code
+) extends Intention
+
 // """{"source": {"name": "Bootstrap.java", "description":"Resource Injector", "content":"class Bootstrap {void inject(Object object){}"}, "where": ["123", "132"]}"""
 case class Slice(
      source: Code,
@@ -118,6 +122,10 @@ object Publish extends DefaultJsonProtocol with SprayJsonSupport {
 
 object Persist extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val persistFormats = jsonFormat1(Persist.apply)
+}
+
+object Preprocess extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val preprocessFormats = jsonFormat1(Preprocess.apply)
 }
 
 object Slice extends DefaultJsonProtocol with SprayJsonSupport {

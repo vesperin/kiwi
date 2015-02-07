@@ -17,7 +17,7 @@ class PostKiwiCleanupApiSpec extends Specification with Specs2RouteTest with Kiw
   implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
   "Kiwi" should {
-    "Return a cleanup request 1 for POST requests to the root path" in {
+    "Return a cleanup request for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", Command(cleanup = Some(Cleanup(Code(name = "ToSort.java", description = "Name class", content = "import java.util.ArrayList;\nimport java.util.Collections;\nimport java.util.List;\nimport java.util.*;\n\npublic class ToSort implements Comparable {\n\n    private Float val;\n    private String id;\n\n    public ToSort(Float val, String id) {\n      this.val = val;\n      this.id = id;\n    }\n\n    @Override\n    public int compareTo(Object o) {\n\n      ToSort f = (ToSort) o;\n\n      if (val.floatValue() > f.val.floatValue()) {\n        return 1;\n      } else if (val.floatValue() < f.val.floatValue()) {\n        return -1;\n      } else {\n        return 0;\n      }\n\n    }\n\n    @Override\n    public String toString() {\n      return this.id;\n    }\n  }"))))) ~>
         sealRoute(routes) ~> check {
 

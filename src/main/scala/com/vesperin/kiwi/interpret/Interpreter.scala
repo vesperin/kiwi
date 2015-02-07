@@ -715,6 +715,28 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     }
   }
 
+
+  private def evalPreprocessing(preprocess: Preprocess): Future[Option[Result]] = {
+
+    def detectsPartialSnippet(introspector:Introspector, source: Source): Future[Boolean] =
+      Future(introspector.detectPartialSnippet(source))
+
+    def produceResult(answer: Boolean): Future[Option[Result]] = Future {
+      Some(Result(info = Some(Info(List(answer.toString)))))
+    }
+
+    val preprocessed = for {
+      source    <- collectSource(preprocess.source)
+      intro     <- createIntrospector()
+      answer    <- detectsPartialSnippet(intro, source)
+      result    <- produceResult(answer)
+    } yield {
+      result
+    }
+
+    preprocessed
+  }
+
   private def limitWords(builder: StringBuilder, words: List[String], visited: mutable.Set[String], limit: Int) = {
 
     val BLANK     = " "
@@ -907,6 +929,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
+      case preprocess: Preprocess   => evalPreprocessing(preprocess)
       case slice: Slice             => evalSlice(environment, slice)
       case stage: Multistage        => evalMultistage(stage)
       case summarize: Summarize     => evalSummarize(summarize)
