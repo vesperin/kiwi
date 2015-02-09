@@ -7,7 +7,7 @@ import com.vesperin.kiwi.domain.{Code, _}
 import com.vesperin.kiwi.spi._
 import edu.ucsc.refactor._
 import edu.ucsc.refactor.spi._
-import edu.ucsc.refactor.util.{Locations, StringUtil, SourceFormatter}
+import edu.ucsc.refactor.util.{Locations, SourceFormatter, StringUtil}
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.{Status, Twitter, TwitterFactory}
 
@@ -287,21 +287,13 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
     def convertJavaMapToScalaMap(stages: java.util.Map[Clip, java.util.List[Location]],
         preprocess:Boolean = false): Future[Map[Clip, List[Location]]] = Future {
+
       val javaMap = preprocess match {
         case true  => CodeIntrospector.adjustClipspace(stages)
         case false => stages
       }
 
-      // http://stackoverflow.com/questions/18649244/how-to-sort-scala-maps-by-length-of-the-key-assuming-keys-are-strings
-      // todo(Huascar) investigate why we are getting an unsorted map during the java-to-scala map conversion
-      // ; especially when the `vesper library` returns a sorted map.
-      val result: collection.Map[Clip, List[Location]] = javaMap.mapValues(_.toList)
-        .toSeq
-        .sortBy(_._1.getSource.getContents.length)
-        .reverse
-        .toMap
-
-      result.toMap
+      javaMap.mapValues(_.toList).toMap
     }
 
 
@@ -325,14 +317,21 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
       val result: mutable.Buffer[Stage] = mutable.Buffer.empty[Stage]
       for((k, v) <- stages){
-        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asCode(k.getSource), budget = budget)
+        result += Stage(
+          k.getLabel,
+          k.getMethodName,
+          k.isBaseClip,
+          toList(v).sortBy(_.from(0)),
+          asCode(k.getSource),
+          budget = budget
+        )
       }
 
       Some(
         Result(
           stages = Some(
             MultiStaged(
-              result.toList
+              result.sortBy(_.source.content.length).toList
             )
           )
         )
