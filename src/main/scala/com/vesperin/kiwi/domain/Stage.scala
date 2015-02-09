@@ -10,7 +10,7 @@ case class Stage(
     label: String
     , method: String
     , isBase: Boolean
-    , where: List[List[Int]] = List()
+    , where: List[Block] = List()
     , source: Code
     , budget: Int = 15
 )

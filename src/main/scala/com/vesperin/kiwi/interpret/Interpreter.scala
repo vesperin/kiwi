@@ -307,10 +307,17 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
     def produceResult(stages: Map[Clip, List[Location]], budget: Int): Future[Option[Result]] =  Future {
 
-      def toList(loc: List[Location]): List[List[Int]] = {
-        val stages: mutable.Buffer[List[Int]] = mutable.Buffer.empty[List[Int]]
+      def toList(loc: List[Location]): List[Block] = {
+        val stages: mutable.Buffer[Block] = mutable.Buffer.empty[Block]
         for( l <- loc){
-          stages += List(l.getStart.getOffset, l.getEnd.getOffset)
+          //l.getStart.getOffset, l.getEnd.getOffset
+          val fromLine:Int = l.getStart.getLine
+          val fromChr:Int  = l.getStart.getOffset
+          val toLine:Int   = l.getEnd.getLine
+          val toChr:Int    = l.getEnd.getOffset
+          val crop:String  = l.getSource.getContents.substring(fromChr,toChr)
+
+          stages += Block(crop, List(fromLine,fromChr), List(toLine,toChr))
         }
 
         stages.toList
@@ -318,7 +325,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
       val result: mutable.Buffer[Stage] = mutable.Buffer.empty[Stage]
       for((k, v) <- stages){
-        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asFormattedCode(k.getSource), budget = budget)
+        result += Stage(k.getLabel, k.getMethodName, k.isBaseClip, toList(v), asCode(k.getSource), budget = budget)
       }
 
       Some(
@@ -363,16 +370,23 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       asScalaBuffer(resultList).toList
     }
 
-    def toListOfListOfInts(loc: List[Location]): Future[List[List[Int]]] = Future {
-      val stages: mutable.Buffer[List[Int]] = mutable.Buffer.empty[List[Int]]
+    def toList(loc: List[Location]): Future[List[Block]] = Future {
+      val stages: mutable.Buffer[Block] = mutable.Buffer.empty[Block]
       for( l <- loc){
-        stages += List(l.getStart.getOffset, l.getEnd.getOffset)
+        //l.getStart.getOffset, l.getEnd.getOffset
+        val fromLine:Int = l.getStart.getLine
+        val fromChr:Int  = l.getStart.getOffset
+        val toLine:Int   = l.getEnd.getLine
+        val toChr:Int    = l.getEnd.getOffset
+        val crop:String  = l.getSource.getContents.substring(fromChr,toChr)
+
+        stages += Block(crop, List(fromLine,fromChr), List(toLine,toChr))
       }
 
       stages.toList
     }
 
-    def summarizeCode(stage: Stage, locations: List[List[Int]]): Future[Option[Result]] = Future {
+    def summarizeCode(stage: Stage, locations: List[Block]): Future[Option[Result]] = Future {
        Some(
          Result(
            stage = Some(
@@ -393,7 +407,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       introspector <- createIntrospector()
       source       <- collectSource(summarize.stage.source, summarize.preprocess)
       foldable     <- foldableLocations(introspector, summarize.stage, source, summarize.preprocess)
-      locations    <- toListOfListOfInts(foldable)
+      locations    <- toList(foldable)
       sum          <- summarizeCode(summarize.stage, locations)
     } yield {
       sum

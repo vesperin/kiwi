@@ -90,8 +90,6 @@ trait Kiwi extends HttpService with AsyncSupport with AuthSupport with CORS {
     path("render") {
       get {
         parameters('q, 's ? "on"){
-          // note (Huascar): IntelliJ is detecting an error where there is none
-          // this is how to use parameters in Spray.io
           (q, s) =>
             detach(executionContext){
               onComplete(interpreter.render(q, s)){

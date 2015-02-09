@@ -1,6 +1,6 @@
 package com.vesperin.kiwi.api
 
-import com.vesperin.kiwi.domain.{Result, Code, Command, Stage, Multistage}
+import com.vesperin.kiwi.domain._
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 
@@ -20,7 +20,7 @@ class PostKiwiMultistageApiSpec extends Specification with Specs2RouteTest with 
         sealRoute(routes) ~> check {
 
         responseAs[Result].stages.get.stages.isEmpty === false
-        responseAs[Result].stages.get.stages(0) mustEqual Stage("Inject", "inject", isBase = true, List(), Code("Bootstrap.java", "Resource Injector", "class Bootstrap {\n  void inject(List<Object> object) {}\n}"), budget = 15)
+        responseAs[Result].stages.get.stages(0) mustEqual Stage("Inject", "inject", isBase = true, List(), Code("Bootstrap.java", "Resource Injector", "class Bootstrap {void inject(List<Object> object){}}"), budget = 15)
       }
     }
 
@@ -29,7 +29,7 @@ class PostKiwiMultistageApiSpec extends Specification with Specs2RouteTest with 
         sealRoute(routes) ~> check {
 
         responseAs[Result].stages.get.stages.isEmpty === false
-        responseAs[Result].stages.get.stages contains Stage("Partition", "partition", isBase = false, List(List(151, 328)), Code("Scratched.java", "Java: Scratched", "private static int partition(int[] arr, int left, int right)\n{\n\t\t\tint pivot = arr[left];\n\t\t\tint i = left - 1;\n\t\t\tint j = right + 1;\n\t\t\twhile (true)\n\t\t\t{\n\t\t\t\t\tdo\n\t\t\t\t\t\t\t\tj--;\n\t\t\t\t\twhile (arr[j] > pivot);\n\n\t\t\t\t\tdo\n\t\t\t\t\t\t\t\ti++;\n\t\t\t\t\twhile (arr[i] < pivot);\n\n\t\t\t\t\tif (i < j)\n\t\t\t\t\t\t\t\tswap(arr, i, j);\n\t\t\t\t\telse\n\t\t\t\t\t\t\t\treturn j;\n\t\t\t}\n}\n\nprivate static void swap(int[] arr, int i, int j)\n{\n\t\t\tint tmp = arr[i];\n\t\t\tarr[i] = arr[j];\n\t\t\tarr[j] = tmp;\n}"), budget = 15)
+        responseAs[Result].stages.get.stages contains Stage("Swap", "swap", isBase = false, List(), Code(name = "Scratched.java", description ="Java: Scratched", content = "private static void swap(int[] arr, int i, int j)\n{\n\t\t\tint tmp = arr[i];\n\t\t\tarr[i] = arr[j];\n\t\t\tarr[j] = tmp;\n}"), budget = 15)
       }
     }
   }
