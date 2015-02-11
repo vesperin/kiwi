@@ -95,12 +95,13 @@ trait VesperLibraryConversions {
   }
 
   def asFormattedDraft(before: Source, after: Source, cause: String, description: String): Draft = {
+    val formattedContent: String  = new SourceFormatter().format(after.getContents)
     Draft(
       cause,
       description,
       System.nanoTime(),
       asCode(before),
-      asCode(after)
+      asCode(Source.from(after, formattedContent))
     )
   }
 
