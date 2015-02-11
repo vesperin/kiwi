@@ -604,34 +604,22 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       // http://stackoverflow.com/questions/24571444/get-element-from-set
 
       val commit: Commit = if (changes.isEmpty) null else changes.toSeq(0)
-      if(commit != null && commit.isValidCommit) {
-        preprocess match {
-          case true  =>
-            Source.unwrap(
-              commit.getSourceAfterChange,
-              Source.currentHeader(
-                commit.getSourceAfterChange,
-                StringUtil.extractFileName(commit.getSourceAfterChange.getName)
-              )
-            )
-          case false =>
-            commit.getSourceAfterChange
-        }
+      val source: Source = commit != null && commit.isValidCommit match {
+        case true  => commit.getSourceAfterChange
+        case false => before
+      }
 
-      } else {
-        preprocess match {
-          case true =>    // means that added a header
-            val formatted: Source = asFormattedSource(before)
-            Source.unwrap(
-              formatted,
-              Source.currentHeader(
-                formatted,
-                StringUtil.extractFileName(formatted.getName)
-              )
+      preprocess match {
+        case true =>
+          Source.unwrap(
+            source,
+            Source.currentHeader(
+              source,
+              StringUtil.extractFileName(source.getName)
             )
-          case false =>
-            before
-        }
+          )
+        case false =>
+          source
       }
     }
 
