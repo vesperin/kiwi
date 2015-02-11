@@ -600,7 +600,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
 
   private def evalCleanup(refactorer: Refactorer, cleanup: Cleanup): Future[Option[Result]] = {
 
-    def unwrapped(before: Source, changes: mutable.Buffer[Commit], preprocess:Boolean): Future[Source] = Future {
+    def collectSourceAfterChanges(before: Source, changes: mutable.Buffer[Commit]): Future[Source] = Future {
       // http://stackoverflow.com/questions/24571444/get-element-from-set
 
       val commit: Commit = if (changes.isEmpty) null else changes.toSeq(0)
@@ -609,6 +609,10 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
         case false => before
       }
 
+      source
+    }
+
+    def unwrappedCode(source: Source, preprocess:Boolean): Future[Source] =  Future {
       preprocess match {
         case true =>
           Source.unwrap(
@@ -647,7 +651,8 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       issues       <- collectIssues(introspector, optimized)
       duplicates   <- filterNonDeduplicateIssues(issues)
       changes      <- applyChanges(refactorer, duplicates)
-      after        <- unwrapped(preprocessed, changes, cleanup.preprocess)
+      collected    <- collectSourceAfterChanges(preprocessed, changes)
+      after        <- unwrappedCode(collected, cleanup.preprocess)
       result       <- produceResult(before, after, cleanup.preprocess)
     } yield {
       result
