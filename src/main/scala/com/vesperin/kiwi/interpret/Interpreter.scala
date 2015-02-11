@@ -619,7 +619,19 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
         }
 
       } else {
-         before
+        preprocess match {
+          case true =>    // means that added a header
+            val formatted: Source = asFormattedSource(before)
+            Source.unwrap(
+              formatted,
+              Source.currentHeader(
+                formatted,
+                StringUtil.extractFileName(formatted.getName)
+              )
+            )
+          case false =>
+            before
+        }
       }
     }
 
@@ -647,7 +659,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       issues       <- collectIssues(introspector, optimized)
       duplicates   <- filterNonDeduplicateIssues(issues)
       changes      <- applyChanges(refactorer, duplicates)
-      after        <- unwrapped(before, changes, cleanup.preprocess)
+      after        <- unwrapped(preprocessed, changes, cleanup.preprocess)
       result       <- produceResult(before, after, cleanup.preprocess)
     } yield {
       result

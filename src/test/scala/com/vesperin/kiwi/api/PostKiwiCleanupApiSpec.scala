@@ -51,6 +51,14 @@ class PostKiwiCleanupApiSpec extends Specification with Specs2RouteTest with Kiw
       }
     }
 
+    "Return a cleanup request (with preprocessing 2) in JSON form for POST requests to the root path" in {
+      Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Scratched.java", "description":"Scratched class", "content":"public static void quicksort(int[] a, int p, int r)\n    {\n        int q;\n        while (p < r)\n        {\n            q = partition(a, p, r);\n            quicksort(a, p, q - 1);\n            p = q + 1;\n        }\n    }\n\n    public static int partition(int[] a, int p, int r)\n    {\n        int j = p - 1;\n        int x = a[r];\n        for (int i = p; i < r; i++)\n        {\n            if (a[i] <= x)\n            {\n                j++;\n                swap(a, i, j);\n            }\n        }\n        j++;\n        swap(a, j, r);\n        return j;\n    }\n\n    private static void swap(int[] a, int i, int j)\n    {\n        int tmp = a[i];\n        a[i] = a[j];\n        a[j] = tmp;\n    }", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":true }}""" )) ~>
+        sealRoute(routes) ~> check {
+        responseAs[Result].draft.get.before mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "public static void quicksort(int[] a, int p, int r)\n    {\n        int q;\n        while (p < r)\n        {\n            q = partition(a, p, r);\n            quicksort(a, p, q - 1);\n            p = q + 1;\n        }\n    }\n\n    public static int partition(int[] a, int p, int r)\n    {\n        int j = p - 1;\n        int x = a[r];\n        for (int i = p; i < r; i++)\n        {\n            if (a[i] <= x)\n            {\n                j++;\n                swap(a, i, j);\n            }\n        }\n        j++;\n        swap(a, j, r);\n        return j;\n    }\n\n    private static void swap(int[] a, int i, int j)\n    {\n        int tmp = a[i];\n        a[i] = a[j];\n        a[j] = tmp;\n    }")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "public static void quicksort(int[] a, int p, int r) {\n    int q;\n    while (p < r) {\n      q = partition(a, p, r);\n      quicksort(a, p, q - 1);\n      p = q + 1;\n    }\n  }\n\n  public static int partition(int[] a, int p, int r) {\n    int j = p - 1;\n    int x = a[r];\n    for (int i = p; i < r; i++) {\n      if (a[i] <= x) {\n        j++;\n        swap(a, i, j);\n      }\n    }\n    j++;\n    swap(a, j, r);\n    return j;\n  }\n\n  private static void swap(int[] a, int i, int j) {\n    int tmp = a[i];\n    a[i] = a[j];\n    a[j] = tmp;\n  }")
+      }
+    }
+
   }
 
 }
