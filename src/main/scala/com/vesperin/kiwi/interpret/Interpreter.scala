@@ -85,7 +85,9 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
         val intro: Introspector = Vesper.createIntrospector()
         val a: Source = asSource(code)
         val header: String = Source.missingHeader(intro, a, name)
-        Source.wrap(a, name, header)
+
+        val src: Source = Source.wrap(a, name, header)
+        asFormattedSource(src)
       case false => asSource(code)
     }
 

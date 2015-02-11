@@ -60,9 +60,13 @@ trait VesperLibraryConversions {
   }
 
   def asFormattedCode(source: Source): Code = {
+    asCode(asFormattedSource(source))
+  }
+
+  def asFormattedSource(source: Source): Source = {
     val content: String = new SourceFormatter().format(source.getContents)
 
-    asCode(Source.from(source, content))
+    Source.from(source, content)
   }
 
   def asSource(source: Code): Source = {

@@ -47,7 +47,7 @@ class PostKiwiCleanupApiSpec extends Specification with Specs2RouteTest with Kiw
       Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"cleanup": { "source": {"name": "Scratched.java", "description":"Scratched class", "content":"/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":true }}""" )) ~>
         sealRoute(routes) ~> check {
         responseAs[Result].draft.get.before mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid baam(){ System.out.println(1); }\n\tvoid beem(){ System.out.println(1); }\n\tvoid buum(){ baam(); }")
-        responseAs[Result].draft.get.after  mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\n\tvoid buum(){ boom(); }")
+        responseAs[Result].draft.get.after  mustEqual Code(name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }")
       }
     }
 
