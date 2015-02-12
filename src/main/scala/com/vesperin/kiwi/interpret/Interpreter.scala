@@ -830,10 +830,9 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       }
     }
 
-    def tweetMessage(code: Code): Future[String] = {
+    def tweetMessage(code: Code, tinyUrl: String): Future[String] = {
       for {
         desc          <- getDescription(code)
-        tinyUrl       <- getVesperUrl(code)
         builtStatus   <- buildStatus(code, desc, tinyUrl)
       } yield {
         builtStatus
@@ -868,25 +867,26 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       }
     }
 
-    def tryTweeting(code: Code): Future[Code] = {
+    def tryTweeting(code: Code, tinyUrl: String): Future[Code] = {
       for {
-        status  <- tweetMessage(code)
+        status  <- tweetMessage(code, tinyUrl)
         theCode <- postStatus(code, status)
       } yield {
         theCode
       }
     }
 
-    def produceResult(theCode: Code): Future[Option[Result]] = {
-      Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name)))))))
+    def produceResult(theCode: Code, tinyUrl: String): Future[Option[Result]] = {
+      Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name), tinyUrl))))))
     }
 
 
     try {
       for {
         code        <- storage.persist(persist.source)
-        tweetedCode <- tryTweeting(code)
-        result      <- produceResult(tweetedCode)
+        tinyUrl     <- getVesperUrl(code)
+        tweetedCode <- tryTweeting(code, tinyUrl)
+        result      <- produceResult(tweetedCode, tinyUrl)
       } yield {
         result
       }

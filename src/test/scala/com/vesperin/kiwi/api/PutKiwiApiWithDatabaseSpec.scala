@@ -42,7 +42,7 @@ class PutKiwiApiWithDatabaseSpec extends Specification with Specs2RouteTest with
           birthday        = Some(new Date().getTime),
           comments        = List(Comment(from = "1;1;0", to = "2;10;234", text = "BigInteger's gcd seems very expensive"))))))) ~>
         sealRoute(routes) ~> check {
-        responseAs[Result] mustEqual Result(info = Some(Info(List("GCD.java was saved, then tweeted by @codetour"))))
+        responseAs[Result].info.get.messages contains "GCD.java was saved, then tweeted by @codetour" //.contains("GCD.java was saved, then tweeted by @codetour")
       }
     }
   }
