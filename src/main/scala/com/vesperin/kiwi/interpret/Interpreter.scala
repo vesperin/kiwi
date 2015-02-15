@@ -775,6 +775,13 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
   }
 
 
+
+  private def getId(id: Option[String]): String = id match {
+    case Some(cid) => cid
+    case None      => "none"
+  }
+
+
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
       case Some(cid) => Future("""http://www.vesperin.com/kiwi/render?q=id:""" + cid)
@@ -876,8 +883,12 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       }
     }
 
-    def produceResult(theCode: Code, tinyUrl: String): Future[Option[Result]] = {
-      Future(Some(Result(info = Some(Info(List("%s was saved, then tweeted by @codetour".format(theCode.name), tinyUrl))))))
+    def produceResult(theCode: Code, tinyUrl: String, id: Option[String]): Future[Option[Result]] = {
+      Future(Some(Result(info = Some(Info(List(
+        "%s was saved, then tweeted by @codetour".format(theCode.name),
+        tinyUrl,
+        getId(id)
+      ))))))
     }
 
 
@@ -886,7 +897,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
         code        <- storage.persist(persist.source)
         tinyUrl     <- getVesperUrl(code)
         tweetedCode <- tryTweeting(code, tinyUrl)
-        result      <- produceResult(tweetedCode, tinyUrl)
+        result      <- produceResult(tweetedCode, tinyUrl, code.id)
       } yield {
         result
       }
