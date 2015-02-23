@@ -651,7 +651,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       issues       <- collectIssues(introspector, optimized)
       duplicates   <- filterNonDeduplicateIssues(issues)
       changes      <- applyChanges(refactorer, duplicates)
-      collected    <- collectSourceAfterChanges(preprocessed, changes)
+      collected    <- collectSourceAfterChanges(optimized, changes)
       after        <- unwrappedCode(collected, cleanup.preprocess)
       result       <- produceResult(before, after, cleanup.preprocess)
     } yield {
