@@ -620,7 +620,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
             Source.currentHeader(
               source,
               StringUtil.extractFileName(source.getName)
-            )
+            ).replace("\n", "\n\n") // HACK: vesper formatting logic must be fixed
           )
         case false =>
           source
