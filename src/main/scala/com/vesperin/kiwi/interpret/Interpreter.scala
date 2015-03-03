@@ -781,6 +781,27 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
     case None      => "none"
   }
 
+  private def evalUpdate(refresh: Update): Future[Option[Result]] = {
+
+    def produceResult(theCode: Code, id: Option[String]): Future[Option[Result]] = {
+      Future(Some(Result(info = Some(Info(List(
+        "%s was updated".format(theCode.name),
+        getId(id)
+      ))))))
+    }
+
+    try {
+      for {
+        code        <- storage.update(refresh.source)
+        result      <- produceResult(code, code.id)
+      } yield {
+        result
+      }
+    } catch {
+      case e: Exception =>  throwFailure(e.getMessage)
+    }
+  }
+
 
   private def evalPersist(who:Auth, persist: Persist): Future[Option[Result]] = {
     def makeVesperUrl(id: Option[String]): Future[String] = id match {
@@ -960,6 +981,7 @@ trait Interpreter extends Configuration with VesperLibraryConversions {
       case cleanup:Cleanup          => evalCleanup(environment, cleanup)
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
+      case updates: Update          => evalUpdate(updates)
       case preprocess: Preprocess   => evalPreprocessing(preprocess)
       case slice: Slice             => evalSlice(environment, slice)
       case stage: Multistage        => evalMultistage(stage)

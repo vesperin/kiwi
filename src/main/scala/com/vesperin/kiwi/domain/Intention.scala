@@ -65,6 +65,10 @@ case class Persist(
      source: Code
 ) extends Intention
 
+case class Update(
+     source: Code
+) extends Intention
+
 case class Preprocess(
      source: Code
 ) extends Intention
@@ -122,6 +126,10 @@ object Publish extends DefaultJsonProtocol with SprayJsonSupport {
 
 object Persist extends DefaultJsonProtocol with SprayJsonSupport {
   implicit val persistFormats = jsonFormat1(Persist.apply)
+}
+
+object Update extends DefaultJsonProtocol with SprayJsonSupport {
+  implicit val updateFormats = jsonFormat1(Update.apply)
 }
 
 object Preprocess extends DefaultJsonProtocol with SprayJsonSupport {

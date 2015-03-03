@@ -15,6 +15,8 @@ trait Storage {
 
   def persist(code: Code): Future[Code] = Sources.add(code)
 
+  def update(code: Code): Future[Code] = Sources.update(code)
+
   def find(doc: BSONDocument): Future[Option[Result]] = Sources.find(doc).flatMap {
     codes => Future(Some(Result(sources = Some(codes))))
   }

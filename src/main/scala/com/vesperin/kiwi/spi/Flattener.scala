@@ -19,6 +19,7 @@ trait Flattener {
       command.publish,
       command.find,
       command.persist,
+      command.update,
       command.preprocess,
       command.slice,
       command.multistage,
