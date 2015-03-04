@@ -43,6 +43,27 @@ class PutKiwiApiWithDatabaseSpec extends Specification with Specs2RouteTest with
         responseAs[Result].info.get.messages contains "GCD.java was saved, then tweeted by @codetour" //.contains("GCD.java was saved, then tweeted by @codetour")
       }
     }
+
+    "return Code snippet was updated! on a put request and perform a database update " in {
+      Put("/kiwi/eval?auth_token=legolas", Command(update = Some(Update(
+        Code(
+          id = Some("3555bf20-7e8e-4d3f-a52b-6b9238451aaf"),
+          name = "GCD.java",
+          description     = "Implements an inefficient GCD algorithm",
+          content         = "class GCD {\t\t\n\t\tstatic int computeGcd(int a, int b){\n\t\t return BigInteger.valueOf(a).gcd(BigInteger.valueOf(b)).intValue(); \n\t\t}\n}",
+          elapsedtime     = Some("00:05:00"),
+          tags            = List("Slow", "Inefficient", "BAD", "DONTUSE"),
+          datastructures  = List("BigInteger"),
+          algorithms      = List("GCD"),
+          refactorings    = List("Full clean up"),
+          confidence      = 2,
+          url             = Some("http://www.programmingtask.com"),
+          birthday        = Some(new Date().getTime),
+          comments        = List(Comment(from = "1;1;0", to = "2;10;234", text = "BigInteger's gcd seems very expensive"))))))) ~>
+        sealRoute(routes) ~> check {
+        responseAs[Result].info.get.messages contains "GCD.java was updated" //.contains("GCD.java was saved, then tweeted by @codetour")
+      }
+    }
   }
 
 
