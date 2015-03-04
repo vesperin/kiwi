@@ -5,6 +5,7 @@ import vesperin.kiwi.domain.{Code, _}
 import reactivemongo.bson.BSONDocument
 
 import scala.concurrent.{ExecutionContextExecutor, ExecutionContext, Future}
+
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
@@ -14,8 +15,6 @@ trait Storage {
 
   def persist(code: Code): Future[Code] = Sources.add(code)
   def update(code: Code): Future[Code]  = Sources.update(code)
-
-  def update(code: Code): Future[Code] = Sources.update(code)
 
   def find(doc: BSONDocument): Future[Option[Result]] = Sources.find(doc).flatMap {
     codes => Future(Some(Result(sources = Some(codes))))
