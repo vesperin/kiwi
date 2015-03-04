@@ -50,12 +50,12 @@ trait VesperLibraryConversions {
     }
 
     Code(
+      id          = sourceId,
       name        = sourceName,
       description = sourceDesc,
       content     = sourceCont,
       tags        = List(),
-      comments    = srcComments,
-      id          = sourceId
+      comments    = srcComments
     )
   }
 
