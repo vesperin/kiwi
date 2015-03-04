@@ -10,7 +10,11 @@ lazy val commonSettings = Seq(
 lazy val kiwi = (project in file(".")).
   settings(commonSettings: _*).
   settings(
-    resolvers += "sprest snapshots" at "http://sprest.io/releases",
+    resolvers ++= Seq(
+      "spray repo" at "http://repo.spray.io/",
+      "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
+      "sprest snapshots" at "http://sprest.io/releases"
+    ),
     libraryDependencies ++= {
       val akkaV = "2.3.6"
       val sprayV = "1.3.2"
@@ -29,4 +33,3 @@ lazy val kiwi = (project in file(".")).
     }
   )
 
-Revolver.settings
