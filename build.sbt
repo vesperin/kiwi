@@ -21,11 +21,11 @@ lazy val kiwi = (project in file(".")).
       Seq(
         "io.spray"            %%  "spray-can"             % sprayV,
         "io.spray"            %%  "spray-routing"         % sprayV,
+        "io.spray"            %%  "spray-json"            % "1.3.1",
         "io.spray"            %%  "spray-testkit"         % sprayV  % "test",
         "com.typesafe.akka"   %%  "akka-actor"            % akkaV,
         "com.typesafe.akka"   %%  "akka-testkit"          % akkaV   % "test",
-        "org.specs2"          %%  "specs2-core"           % "2.3.11" % "test",
-        "sprest"              %%  "sprest-core"           % "0.3.7",
+        "org.reactivemongo"   %%  "reactivemongo"         % "0.10.0",
         "sprest"              %%  "sprest-reactivemongo"  % "0.3.7",
         "com.lihaoyi"         %%  "scalatags"             % "0.4.5",
         "org.twitter4j"       %   "twitter4j-core"        % "4.0.2"
