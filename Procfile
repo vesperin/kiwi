@@ -1,1 +1,1 @@
-web: target/start Main
+web: target/universal/stage/bin/kiwi

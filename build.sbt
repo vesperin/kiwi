@@ -1,44 +1,31 @@
-import com.typesafe.sbt.SbtStartScript
+packageArchetype.java_application
 
-seq(SbtStartScript.startScriptForClassesSettings: _*)
-
-name 			:= "vesper-http"
-
-organization  	:= "com.vesperin"
-
-version 		:= "0.0.1"
-
-scalaVersion 	:= "2.10.3"
-
-scalacOptions 	:= Seq("-unchecked", "-deprecation", "-encoding", "utf8")
-
-ideaExcludeFolders += ".idea"
-
-ideaExcludeFolders += ".idea_modules"
-
-resolvers ++= Seq(
-  "spray repo" at "http://repo.spray.io/",
-  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
-  "sprest snapshots" at "http://markschaake.github.com/releases"
+lazy val commonSettings = Seq(
+  organization  := "com.vesperin",
+  version       := "0.1",
+  scalaVersion  := "2.10.4",
+  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8") 
 )
 
-
-libraryDependencies ++= {
-  val akkaVersion  = "2.2.4"
-  val sprayVersion = "1.2.1"
+lazy val kiwi = (project in file(".")).
+  settings(commonSettings: _*).
+  settings(
+    libraryDependencies ++= {
+  val akkaV = "2.3.6"
+  val sprayV = "1.3.2"
   Seq(
-    "io.spray"              %   "spray-can"            % sprayVersion
-    , "io.spray"            %   "spray-routing"        % sprayVersion
-    , "io.spray"            %%  "spray-json"           % "1.2.5"
-    , "io.spray"            %   "spray-testkit"        % sprayVersion  % "test"
-    , "com.typesafe.akka"   %%  "akka-actor"           % akkaVersion
-    , "com.typesafe.akka"   %%  "akka-testkit"         % akkaVersion   % "test"
-    , "org.reactivemongo"   %%  "reactivemongo"        % "0.10.0"
-    , "sprest"              %%  "sprest-reactivemongo" % "0.3.2"
-    , "org.specs2"          %%  "specs2-core"          % "2.3.7" % "test"
-    , "org.twitter4j"       %   "twitter4j-core"       % "4.0.2"
-    , "com.scalatags"       %%  "scalatags"            % "0.3.8"
+    "io.spray"            %%  "spray-can"             % sprayV,
+    "io.spray"            %%  "spray-routing"         % sprayV,
+    "io.spray"            %%  "spray-testkit"         % sprayV  % "test",
+    "com.typesafe.akka"   %%  "akka-actor"            % akkaV,
+    "com.typesafe.akka"   %%  "akka-testkit"          % akkaV   % "test",
+    "org.specs2"          %%  "specs2-core"           % "2.3.11" % "test",
+    "sprest"              %%  "sprest-core"           % "0.3.7",
+    "sprest"              %%  "sprest-reactivemongo"  % "0.3.7",
+    "com.lihaoyi"         %%  "scalatags"             % "0.4.5",
+    "org.twitter4j"       %   "twitter4j-core"        % "4.0.2"
   )
 }
+  )
 
-seq(Revolver.settings: _*)
+//Revolver.settings
