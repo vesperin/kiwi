@@ -23,6 +23,7 @@ lazy val kiwi = (project in file(".")).
         "io.spray"            %%  "spray-routing"         % sprayV,
         "io.spray"            %%  "spray-json"            % "1.3.1",
         "io.spray"            %%  "spray-testkit"         % sprayV  % "test",
+        "org.specs2"          %%  "specs2-core"           % "2.3.11" % "test",
         "com.typesafe.akka"   %%  "akka-actor"            % akkaV,
         "com.typesafe.akka"   %%  "akka-testkit"          % akkaV   % "test",
         "org.reactivemongo"   %%  "reactivemongo"         % "0.10.0",
