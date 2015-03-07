@@ -38,7 +38,7 @@ trait ReactiveMongoStorage extends ReactiveMongoPersistence with Configuration {
   val ConnectionMaker(connection) = Properties.envOrNone("MONGOHQ_URL")
   // Gets a reference to the database 'sources'
   println("The database is " + remoteDatabase + " \n")
-  val db = connection(remoteDatabase)
+  lazy val db = connection(remoteDatabase)
 
 
   // Json mapping to / from BSON - in this case we want "_id" from BSON to be

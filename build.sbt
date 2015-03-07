@@ -4,7 +4,7 @@ lazy val commonSettings = Seq(
   organization  := "com.vesperin",
   version       := "0.1",
   scalaVersion  := "2.10.4",
-  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8") 
+  scalacOptions := Seq("-unchecked", "-deprecation", "-encoding", "utf8")
 )
 
 lazy val kiwi = (project in file(".")).
