@@ -1,15 +1,14 @@
 package vesperin.kiwi.interpret
 
-import vesperin.kiwi.spi.{Auth, Membership, Role}
-import vesperin.kiwi.config.Configuration
-import vesperin.kiwi.db.{MongoStorage, Storage}
-import vesperin.kiwi.domain.{Code, _}
-import vesperin.kiwi.spi._
 import edu.ucsc.refactor._
 import edu.ucsc.refactor.spi._
 import edu.ucsc.refactor.util.{Locations, SourceFormatter, StringUtil}
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.{Status, Twitter, TwitterFactory}
+import vesperin.kiwi.config.Configuration
+import vesperin.kiwi.db.{MongoStorage, Storage}
+import vesperin.kiwi.domain.{Code, _}
+import vesperin.kiwi.spi.{Auth, Membership, Role, _}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -772,6 +771,57 @@ trait Interpreter extends Configuration with
     case _    => id
   }
 
+  private def evalPack(pack: Pack): Future[Option[Result]] = {
+    def produceResult(before: Source, after: Source): Future[Option[Result]] = Future {
+      Some(
+        Result(
+          draft = Some(
+            asFormattedDraft(
+              before,
+              after,
+              "Code Packing",
+              "Complete code example"
+            )
+          )
+        ))
+    }
+
+    def addMissingImports(prelims: Source, introsp: Introspector, preprocess: Boolean,
+        imports: Boolean): Future[Source] = Future {
+
+      val after: Source = if(!preprocess && imports){
+        val content: String = prelims.getContents
+        val directives: Seq[String] = asScalaSet(introsp.detectMissingImports(prelims))
+          .toSeq.map(x => "import" + " " + x)
+
+        val removedDuplicates: Seq[String] = directives.filter(d => !content.contains(d))
+
+        val directivesString: String = removedDuplicates.mkString("\n")
+        val updatedContent: String   = directivesString + content
+
+        Source.from(prelims, updatedContent)
+      } else {
+        prelims
+      }
+
+      after
+    }
+
+    try {
+      for {
+        before      <- collectSource(pack.source)
+        prelims     <- collectSource(pack.source, pack.preprocess)
+        introspect  <- createIntrospector()
+        after       <- addMissingImports(prelims, introspect, pack.preprocess, pack.imports)
+        result      <- produceResult(before, after)
+      } yield {
+        result
+      }
+    } catch {
+      case e: Exception =>  throwFailure(e.getMessage)
+    }
+  }
+
   private def evalUpdate(refresh: Update): Future[Option[Result]] = {
 
     def produceResult(theCode: Code, id: String): Future[Option[Result]] = {
@@ -968,6 +1018,7 @@ trait Interpreter extends Configuration with
       case find: Find               => evalFind(what, find)
       case persist: Persist         => evalPersist(who, persist)
       case updates: Update          => evalUpdate(updates)
+      case pack: Pack               => evalPack(pack)
       case preprocess: Preprocess   => evalPreprocessing(preprocess)
       case slice: Slice             => evalSlice(environment, slice)
       case stage: Multistage        => evalMultistage(stage)

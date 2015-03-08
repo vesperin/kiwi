@@ -18,6 +18,7 @@ case class Command(
   publish:      Option[Publish]     = None,
   persist:      Option[Persist]     = None,
   update:       Option[Update]      = None,
+  pack:         Option[Pack]        = None,
   preprocess:   Option[Preprocess]  = None,
   find:         Option[Find]        = None,
   slice:        Option[Slice]       = None,
@@ -26,5 +27,5 @@ case class Command(
 )
 
 object Command extends DefaultJsonProtocol with SprayJsonSupport {
-  implicit val requestFormats = jsonFormat15(Command.apply)
+  implicit val requestFormats = jsonFormat16(Command.apply)
 }
