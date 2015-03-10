@@ -87,8 +87,7 @@ trait Interpreter extends Configuration with
         val a: Source = asSource(code)
         val header: String = Source.missingHeader(intro, a, name)
 
-        val src: Source = Source.wrap(a, name, header)
-        asFormattedSource(src)
+        Source.wrap(a, name, header)
       case false => asSource(code)
     }
 
@@ -614,7 +613,7 @@ trait Interpreter extends Configuration with
             Source.currentHeader(
               source,
               StringUtil.extractFileName(source.getName)
-            ).replace("\n", "\n\n") // HACK: vesper formatting logic must be fixed
+            )
           )
         case false =>
           source
