@@ -71,8 +71,8 @@ class PostKiwiIndividualCleanupApiSpec extends Specification with Specs2RouteTes
     "Return a deduplicate request (with preprocessing) in JSON form for POST requests to the root path" in {
       Post("/kiwi/eval?auth_token=legolas", HttpEntity(MediaTypes.`application/json`, """{"deduplicate": { "source": {"id":"new", "name": "Scratched.java", "description":"Scratched class", "content":"/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid baam(){ System.out.println(1); }\nvoid beem(){ System.out.println(1); }\nvoid buum(){ baam(); }", "tags":[], "datastructures": [], "algorithms": [], "refactorings": [], "confidence": 2, "comments":[]}, "preprocess":true }}""" )) ~>
         sealRoute(routes) ~> check {
-        responseAs[Result].draft.get.before mustEqual Code(id = "new", name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void baam() {\n    System.out.println(1);\n  }\n\n  void beem() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    baam();\n  }")
-        responseAs[Result].draft.get.after  mustEqual Code(id = "new", name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\n  void boom() {\n    System.out.println(1);\n  }\n\n  void buum() {\n    boom();\n  }")
+        responseAs[Result].draft.get.before mustEqual Code(id = "new", name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid baam(){ System.out.println(1); }\nvoid beem(){ System.out.println(1); }\nvoid buum(){ baam(); }")
+        responseAs[Result].draft.get.after  mustEqual Code(id = "new", name = "Scratched.java", description = "Scratched class", content = "/** {@link Name#boom(String)} **/\tvoid boom(){ System.out.println(1); }\nvoid buum(){ boom(); }")
       }
     }
 
