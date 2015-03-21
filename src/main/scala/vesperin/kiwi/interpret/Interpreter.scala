@@ -848,10 +848,13 @@ trait Interpreter extends Configuration with
     def getDescription(code: Code): Future[String] = Future(code.description)
 
     def getVesperUrl(code: Code): Future[String]   = {
-      val googleShortener: UrlShortener = new UrlShortener
+      lazy val bitly: Bitlys = new Bitlys(BITLY_API_KEY_1, BITLY_API_KEY_2)
       for {
         vesperUrl <- makeVesperUrl(code.id)
-        tinyUrl   <- googleShortener.shortenUrl(vesperUrl)
+        tinyUrl   <- Future(bitly.shorten(vesperUrl) match {
+          case Some(url) => url
+          case _         => "none"
+        })
       } yield {
         tinyUrl
       }
@@ -860,12 +863,14 @@ trait Interpreter extends Configuration with
     def buildStatus(code: Code, desc: String, tinyUrl: String): Future[String] = {
       Future {
         val ELLIPSES_TEXT: String         = "..."
+        val spaces:Int                    = if (tinyUrl == "none") 1 else 2
         val description: String           = desc.stripPrefix("Java:").stripSuffix(".").trim
-        val shortDescription: String      = if (description.length + tinyUrl.length + 2/*spaces*/ >= 100)
+        val shortDescription: String      = if (description.length + tinyUrl.length + spaces/*spaces*/ >= 100)
           description.substring(0, 50) + ELLIPSES_TEXT
         else description
 
-        val massagedDescription: String   = shortDescription + " " + tinyUrl + " "
+        val massagedDescription: String   = shortDescription +
+          (if(tinyUrl == "none") " " else " " + tinyUrl + " ")
 
         val algorithms      = code.algorithms
         val datastructures  = code.datastructures

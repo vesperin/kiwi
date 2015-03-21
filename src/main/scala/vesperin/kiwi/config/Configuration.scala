@@ -68,4 +68,7 @@ trait Configuration {
   lazy val OAuthConsumerSecret    = Try(config.getString("twitter.OAuthConsumerSecret")).toOption.orNull
   lazy val OAuthAccessToken       = Try(config.getString("twitter.OAuthAccessToken")).toOption.orNull
   lazy val OAuthAccessTokenSecret = Try(config.getString("twitter.OAuthAccessTokenSecret")).toOption.orNull
+
+  lazy val BITLY_API_KEY_1         = Try(config.getString("bitly.apiKey1")).toOption.orNull
+  lazy val BITLY_API_KEY_2         = Try(config.getString("bitly.apiKey2")).toOption.orNull
 }
