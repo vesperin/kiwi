@@ -2,7 +2,7 @@
 
 The Kiwi API was implemented in Scala. It consists of two logical services: Curation and Parsing.
 
-The Curation service manages Vesperin’s curation operations, such as basic code transformations and refactorings, code presentation, and publication (published on Twitter). The Parsing service manages the access to a Java parsing API, built on top of Eclipse JDT1.
+The Curation service manages Vesperin’s curation operations, such as basic code transformations and refactorings, code presentation, and publication (published on Twitter). The Parsing service manages the access to a Java parsing API, built on top of Eclipse JDT.
 
 All requests are, by default, provided as JSON. There is no authentication required to make Curation and Parsing API calls.
 
