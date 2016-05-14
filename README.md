@@ -1,33 +1,36 @@
-## Vesper on Spray
+## Vesperin's Kiwi
 
-This projects provides a starting point for your _vespering_ endeavors.
+The Kiwi API was implemented in Scala. It consists of two logical services: Curation and Parsing.
 
-Follow these steps to get started:
+The Curation service manages Vesperin’s curation operations, such as basic code transformations and refactorings, code presentation, and publication (published on Twitter). The Parsing service manages the access to a Java parsing API, built on top of Eclipse JDT1.
 
-1. Git-clone this repository.
+All requests are, by default, provided as JSON. There is no authentication required to make Curation and Parsing API calls.
 
-        $ git clone git://github.com/hsanchez/vesper-http.git
+```
+{"rename": {
+  "what": "method",
+  "where": [1, 6],
+  "source": {
+    "name": "...",
+    "description": "...",
+    "content": "..."
+  }
+ }
+}
+```
 
-2. Change directory into your clone:
+## License
 
-        $ cd vesper-http
+    Copyright 2016 Huascar Sanchez
 
-3. Launch SBT:
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-        $ sbt
+       http://www.apache.org/licenses/LICENSE-2.0
 
-4. Compile everything and run all tests:
-
-        > test
-
-5. Start the application:
-
-        > re-start
-
-6. Browse to http://localhost:8080/
-
-7. Stop the application:
-
-        > re-stop
-
-8. Learn more at http://www.huascarsanchez.com
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
