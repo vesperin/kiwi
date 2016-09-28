@@ -1,16 +1,21 @@
 package com.vesperin.kiwi.api
 
-import com.vesperin.kiwi.domain.{Code, Deduplicate, Command}
+import com.vesperin.kiwi.domain._
 import org.specs2.mutable.Specification
 import spray.http.HttpHeaders.RawHeader
 import spray.http.StatusCodes
 import spray.testkit.Specs2RouteTest
+
+import scala.concurrent.duration._
 
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 class PutKiwiCleanupApiSpec extends Specification with Specs2RouteTest with Kiwi {
   def actorRefFactory = system
+
+  // reason of this addition? see https://groups.google.com/forum/#!msg/spray-user/o8DtI6VUMbA/n9tguTb_1noJ
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
   "Kiwi" should {
     "Return a 401 unauthorized request message after a deduplication POST request to the root path" in {

@@ -4,11 +4,15 @@ import com.vesperin.kiwi.domain._
 import org.specs2.mutable.Specification
 import spray.testkit.Specs2RouteTest
 
+import scala.concurrent.duration._
+
 /**
  * @author hsanchez@cs.ucsc.edu (Huascar A. Sanchez)
  */
 class PostKiwiInspectApiSpec extends Specification with Specs2RouteTest with Kiwi {
   def actorRefFactory = system
+
+  implicit val routeTestTimeout = RouteTestTimeout(FiniteDuration(5, SECONDS))
 
   "Kiwi" should {
     "Return an inspect request for POST requests to the root path" in {

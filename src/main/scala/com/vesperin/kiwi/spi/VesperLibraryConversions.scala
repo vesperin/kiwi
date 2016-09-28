@@ -59,6 +59,16 @@ trait VesperLibraryConversions {
     )
   }
 
+  def asFormattedCode(source: Source): Code = {
+    asCode(asFormattedSource(source))
+  }
+
+  def asFormattedSource(source: Source): Source = {
+    val content: String = new SourceFormatter().format(source.getContents)
+
+    Source.from(source, content)
+  }
+
   def asSource(source: Code): Source = {
     val result: Source = new Source(source.name, source.content, source.description)
 
@@ -89,12 +99,13 @@ trait VesperLibraryConversions {
   }
 
   def asFormattedDraft(before: Source, after: Source, cause: String, description: String): Draft = {
+    val formattedContent: String  = new SourceFormatter().format(after.getContents)
     Draft(
       cause,
       description,
       System.nanoTime(),
       asCode(before),
-      asCode(after)
+      asCode(Source.from(after, formattedContent))
     )
   }
 
@@ -115,19 +126,21 @@ trait VesperLibraryConversions {
     asFormattedDraft(
       commit,
       commit.getNameOfChange.getKey,
-      simplePast(commit.getNameOfChange.getKey)
+      description(commit.getNameOfChange.getKey)
     )
   }
 
   def asDraft(commit: Commit): Draft = {
     Draft(
       commit.getNameOfChange.getKey,
-      simplePast(commit.getNameOfChange.getKey),
+      description(commit.getNameOfChange.getKey),
       commit.getTimestamp,
       asCode(commit.getSourceBeforeChange),
       asCode(commit.getSourceAfterChange)
     )
   }
+
+  def description(key: String): String = simplePast(key)
 
   def asCommit(username:String, draft: Draft): Commit = {
     val before: Source      = asSource(draft.before)
